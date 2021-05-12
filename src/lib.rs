@@ -13,13 +13,22 @@ pub struct FEAParser;
 
 #[test]
 fn test_feaparser() {
-    let test = r#"@lol = [Qol Mol];
+    let test = r#"@lol = [Qol Mol @lol];
     languagesystem DFLT dflt;
     language DEU required;
-    include(te"st);
+    include(te\)st);
+    # include(te)st); would fail
     include (lol);
 
-    anonymous jigg { @lol = [lol]; {@Q = [Q R S T];} } jigg;
+    anonymous jig { @lol = [lol]; {@Q = [Q R S T];} name ";}{"; {}; "}"; } jig;
+    anonymous jjig { } jjig;
+    anonymous jjig {} jjig;
+    anonymous FIVE { {} {} {} } FIVE;
+    # This'd be invalid FEA syntax due to tag mismatch. It's up to struct builder to check this! Not possible in a grammar.
+    anonymous LAST {
+        It's the end of the world as we know it
+        And I feel fine!
+    } FRST;
 
     name 0x3 0x1 0x411;
 
@@ -76,7 +85,7 @@ feature aalt {
         name "Fancy Q's";
     };
     lookup aalt_1 {
-        #sub Q from [Q.ss01 Q.ss02 Q.ss03];
+        sub Q from [Q.ss01 Q.ss02 Q.ss03];
     } aalt_1;
 } aalt;
 
@@ -93,6 +102,7 @@ valueRecordDef <0 0 20 0> SECOND_KERN;
 
 feature liga {
     sub A by B;
+    sub @A by @B;
     sub B by A B C;
     sub f f by f_f;
     subtable;
@@ -101,11 +111,13 @@ feature liga {
     sub f l' lookup test;
     sub f l' by y;
     sub Q by NULL;
-    sub \NULL by NULL;
+    lookup inside_lu {sub \NULL by NULL;}inside_lu;
 } liga;
+# comment ça va
+#
     "#;
     let ast = FEAParser::parse(Rule::file, test);
-    eprintln!("{:?}", ast);
+    //eprintln!("{:?}", ast);
     use pest_ascii_tree::{self, into_ascii_tree};
     eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
 }
