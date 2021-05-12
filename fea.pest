@@ -1,0 +1,155 @@
+null_token = @{ "NULL" }
+tag = @{ ASCII_ALPHA{1, 4} }
+default_script = { "DFLT" }
+script = { tag | default_script }
+default_language = { "dflt" }
+language = { tag | default_language }
+
+languagesystem_statement = { "languagesystem" ~ script ~ language }
+script_statement = { "script" ~ script }
+dflt_tag = { "exclude_dflt" | "include_dflt" }
+required_tag = { "required" }
+language_statement = ${ "language" ~ WHITESPACE+ ~ language ~ (WHITESPACE+ ~ (dflt_tag | required_tag))* }
+
+include_string_char = {
+    !(")") ~ ANY
+    | "\\" ~ (")")
+}
+include_inner = @{ include_string_char* } 
+include_statement = { "include" ~ "(" ~ include_inner ~ ")" }
+
+// Quoted strings
+quoted_string = ${ "\"" ~ qs_inner ~ "\"" }
+qs_inner = @{ qs_char* }
+qs_char = {
+    !("\"" | "\\") ~ ANY
+    | "\\" ~ ("\"" | "\\")
+}
+
+// Glyph names and classes
+start_glyph_name = { ASCII_ALPHA | ASCII_DIGIT | "_" }
+mid_glyph_name = { start_glyph_name | "." | "-" }
+name_inner = @{ (start_glyph_name | mid_glyph_name)+ }
+class_inner = @{ start_glyph_name+ }
+class_name = ${ "@" ~ class_inner }
+barename = @{ !(null_token) ~ ("\\"? ~ name_inner) }
+inline_class = {"[" ~ (barename | class_name)+ ~ "]"}
+class = { class_name | inline_class }
+glyph_or_class = { barename | class }
+
+class_definition_statement = { class_name ~ "=" ~ inline_class }
+
+// Substitutions
+subtitute_tag = @{ "sub" ~ ("stitute" | "stitut" | "stitu" | "stit" | "sti" | "st" | "s")? }
+ignore_tag = @{ "ignore" }
+sub_tag = @{ (ignore_tag ~ WHITESPACE+)? ~ subtitute_tag }
+by_tag = { "by" }
+// single
+gsub_1a = { sub_tag ~ barename ~ by_tag ~ barename }
+gsub_1b = { sub_tag ~ class ~ by_tag ~ barename }
+gsub_1c = { sub_tag ~ class ~ by_tag ~ class }
+// mult
+gsub_glyph_seq = ${ ((!(by_tag | from_tag | lookup_tag) ~ barename) ~ WHITESPACE*){2,} }
+gsub_2a = ${ sub_tag ~ WHITESPACE+ ~ (!(by_tag) ~ barename) ~ WHITESPACE+ ~ by_tag ~ WHITESPACE+ ~ gsub_glyph_seq }
+gsub_2b = { sub_tag ~ barename ~ by_tag ~ null_token }
+// alternate
+from_tag = { "from" }
+gsub_3 = { sub_tag ~ (!(from_tag) ~ barename) ~ from_tag ~ class }
+// liga
+// 				    this ! is needed due to ambiguity. "by" and "from" also match barename. stops consumption as barename of by_tag.
+gsub_4 = ${ sub_tag ~ WHITESPACE+ ~ gsub_glyph_seq ~ by_tag ~ WHITESPACE+ ~ barename }
+// gsub5 is skipped per spec
+apply_lookup = ${ "'" ~ WHITESPACE+ ~ lookup_tag ~ WHITESPACE+ ~ lookup_name }
+apply_by = { "'" }
+// contextual
+gsub_6 = ${ sub_tag ~ WHITESPACE+ ~ (!(by_tag | from_tag | lookup_tag) ~ (glyph_or_class ~ (apply_lookup | apply_by)? ~ WHITESPACE*))+ ~ (by_tag ~ WHITESPACE+ ~ glyph_or_class)? }
+gsub_statement = { gsub_3 | gsub_2a | gsub_2b | gsub_4 | gsub_1a | gsub_1b | gsub_1c | gsub_6 }
+
+// Value records
+valuerecord1 = { fea_integer }
+valuerecord4 = { "<" ~ WHITESPACE* ~ (fea_integer ~ WHITESPACE*){4} ~ ">" }
+valuerecord = { valuerecord4 | valuerecord1 }
+valuerecord_name = ${ name_inner }
+valuerecorddef_tag = @{ "valueRecordDef" }
+valuerecorddef_statement = { valuerecorddef_tag ~ valuerecord ~ valuerecord_name }
+// Anchor definitions
+anchor_name = ${ name_inner }
+anchordef_tag = @{ "anchorDef" }
+contourpoint = { contourpoint_tag ~ fea_integer }
+anchor_coordinates = { fea_integer ~ fea_integer }
+contourpoint_tag = @{ "contourpoint" }
+anchordef_statement = { anchordef_tag ~ anchor_coordinates ~ contourpoint? ~ anchor_name }
+
+// Blocks, including anonymous blocks
+block = { "{" ~ (block | statement)* ~ "}" }
+tagged_block = { tag ~ block ~ tag }
+anonymous = @{ "anon" ~ ("ymous" | "ymou" | "ymo" | "ym" | "y")? }
+anonymous_statement = { anonymous ~ tagged_block }
+
+fea_hex_integer = @{ ("0x" | "0X") ~ ASCII_HEX_DIGIT+ }
+fea_decimal_integer = @{ "-"? ~ ASCII_DIGIT+ }
+fea_integer = @{ fea_hex_integer | fea_decimal_integer }
+
+name_statement = { "name" ~ fea_integer? ~ fea_integer? ~ fea_integer? ~ quoted_string? }
+feature_names_statement = { "featureNames" ~ block }
+
+feature_statement = { "feature" ~ tag ~ use_extension? ~ block ~ tag }
+
+// Lookups
+lookupflag_statement = { "lookupflag" ~ (fea_integer | lookupflag_simple | lookupflag_complex) }
+lookupflag_simple = @{ "RightToLeft" | "IgnoreBaseGlyphs" | "IgnoreLigatures" | "IgnoreMarks" }
+lookupflag_complex_tag = @{ "MarkAttachmentType" | "UseMarkFilteringSet" }
+lookupflag_complex = { lookupflag_complex_tag ~ class }
+
+use_extension = { "useExtension" }
+lookup_name = @{ name_inner }
+lookup_tag = { "lookup" }
+lookup_statement = { lookup_tag ~ lookup_name ~ use_extension? ~ block ~ lookup_name }
+
+// Variation (adobe-type-tools/afdko#1350)
+variation_tag = @{ "variation" }
+variation_name = @{ name_inner }
+variation_lookup_statement = { lookup_tag ~ lookup_name }
+variation_block = { "{" ~ (variation_lookup_statement ~ ";")+ ~ "}" }
+variation_statement = { variation_tag ~ tag ~ variation_name ~ variation_block ~ tag }
+
+// Raw OpenType tables
+gdef_statement = { (glyphclassdef_gdef_statement | attach_gdef_statement | ligaturecaretbypos_gdef_statement | ligaturecaretbyindex_gdef_statement) ~ ";" }
+gdef_block = { "{" ~ (gdef_statement)+ ~ "}" }
+table_gdef_statement = { "table" ~ "GDEF" ~ gdef_block ~ "GDEF" }
+glyphclassdef_gdef_statement = { "GlyphClassDef" ~ (class? ~ ","){3} ~ class? }
+attach_gdef_statement = { "Attach" ~ glyph_or_class ~ fea_integer }
+ligaturecaretbypos_gdef_statement = { "LigatureCaretByPos" ~ glyph_or_class ~ fea_integer }
+ligaturecaretbyindex_gdef_statement = { "LigatureCaretByIndex" ~ glyph_or_class ~ fea_integer }
+
+version = @{ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+font_revision_statement = { "FontRevision" ~ version }
+table_head_statement = { "table" ~ "head" ~ "{" ~ font_revision_statement ~ ";" ~ "}" ~ "head" }
+
+nameid_statement = { "nameid" ~ fea_integer ~ fea_integer? ~ fea_integer? ~ fea_integer? ~ quoted_string? }
+table_name_statement = { "table" ~ "name" ~ "{" ~ nameid_statement ~ ";" ~ "}" ~ "name" }
+
+os2_statement = { (os2_single_number | os2_panose | os2_range | os2_vendor) ~ ";" }
+os2_vendor_id = @{ ASCII{1,4} }
+os2_vendor = { "Vendor" ~ "\"" ~ os2_vendor_id  ~ "\"" }
+os2_single_number_tag = { "FSType" | "TypoAscender" | "TypoDescender" | "TypoLineGap" | "winAscent" | "winDescent" | "XHeight" | "CapHeight" | "WeightClass" | "WidthClass" | "LowerOpSize" | "UpperOpSize" | "FamilyClass" }
+os2_single_number = { os2_single_number_tag ~ fea_integer }
+os2_panose = { "Panose" ~ fea_integer{10} }
+os2_range_tag = { "UnicodeRange" | "CodePageRange" }
+os2_range = { os2_range_tag ~ fea_integer+ }
+os2_block = { "{" ~ (os2_statement)+ ~ "}" }
+table_os2_statement = { "table" ~ "OS/2" ~ os2_block ~ "OS/2" }
+
+table_statement = { table_gdef_statement | table_head_statement | table_name_statement | table_os2_statement }
+subtable_statement = { "subtable" }
+
+statement = _{ (include_statement | languagesystem_statement | language_statement | script_statement
+		| class_definition_statement | anonymous_statement | feature_statement 
+		| feature_names_statement | name_statement | table_statement | subtable_statement 
+		| gsub_statement | lookup_statement | variation_statement | valuerecorddef_statement
+		| anchordef_statement ) ~ ";" }
+
+file = _{SOI ~ statement+ ~ EOI}
+
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }
