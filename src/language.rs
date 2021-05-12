@@ -21,21 +21,33 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["mhv", "rmz", "rki"]),
     Some(&["asm"]),
     Some(&["ast"]),
-    Some(&["aht", "apa", "apk", "apj", "apl", "apm", "apw", "ath", "bea", "sek", "bcr", "caf", "chp", "clc", "coq", "crx", "ctc", "den", "dgr", "gce", "gwi", "haa", "hoi", "hup", "ing", "kkz", "koy", "ktw", "kuu", "mvb", "nav", "qwt", "scs", "srs", "taa", "tau", "tcb", "tce", "tfn", "tgx", "tht", "tol", "ttm", "tuu", "txc", "wlk", "xup", "xsl"]),
+    Some(&[
+        "aht", "apa", "apk", "apj", "apl", "apm", "apw", "ath", "bea", "sek", "bcr", "caf", "chp",
+        "clc", "coq", "crx", "ctc", "den", "dgr", "gce", "gwi", "haa", "hoi", "hup", "ing", "kkz",
+        "koy", "ktw", "kuu", "mvb", "nav", "qwt", "scs", "srs", "taa", "tau", "tcb", "tce", "tfn",
+        "tgx", "tht", "tol", "ttm", "tuu", "txc", "wlk", "xup", "xsl",
+    ]),
     Some(&["ava"]),
     Some(&["awa"]),
     Some(&["aym"]),
     Some(&["azb"]),
     Some(&["aze"]),
     Some(&["bfq"]),
-    Some(&["bad", "bbp", "bfl", "bjo", "bpd", "bqk", "gox", "kuw", "liy", "lna", "lnl", "mnh", "nue", "nuu", "tor", "yaj", "zmz"]),
+    Some(&[
+        "bad", "bbp", "bfl", "bjo", "bpd", "bqk", "gox", "kuw", "liy", "lna", "lnl", "mnh", "nue",
+        "nuu", "tor", "yaj", "zmz",
+    ]),
     Some(&["bfy"]),
     Some(&["krc"]),
     Some(&["ban"]),
     Some(&["bar"]),
     Some(&["bci"]),
     Some(&["bbc"]),
-    Some(&["auj", "ber", "cnu", "gha", "gho", "grr", "jbe", "jbn", "kab", "mzb", "oua", "rif", "sds", "shi", "shy", "siz", "sjs", "swn", "taq", "tez", "thv", "thz", "tia", "tjo", "tmh", "ttq", "tzm", "zen", "zgh"]),
+    Some(&[
+        "auj", "ber", "cnu", "gha", "gho", "grr", "jbe", "jbn", "kab", "mzb", "oua", "rif", "sds",
+        "shi", "shy", "siz", "sjs", "swn", "taq", "tez", "thv", "thz", "tia", "tjo", "tmh", "ttq",
+        "tzm", "zen", "zgh",
+    ]),
     Some(&["bcq"]),
     None,
     Some(&["bdy"]),
@@ -47,7 +59,9 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["bul"]),
     Some(&["bhi", "bhb"]),
     Some(&["bho"]),
-    Some(&["bik", "bhk", "bcl", "bto", "cts", "bln", "fbl", "lbl", "rbl", "ubl"]),
+    Some(&[
+        "bik", "bhk", "bcl", "bto", "cts", "bln", "fbl", "lbl", "rbl", "ubl",
+    ]),
     Some(&["byn"]),
     Some(&["bis"]),
     Some(&["bjj"]),
@@ -57,7 +71,9 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["bjt", "ble"]),
     Some(&["bft"]),
     Some(&["bam"]),
-    Some(&["bai", "bbj", "bko", "byv", "fmp", "jgo", "nla", "nnh", "nnz", "nwe", "xmg", "ybb"]),
+    Some(&[
+        "bai", "bbj", "bko", "byv", "fmp", "jgo", "nla", "nnh", "nnz", "nwe", "xmg", "ybb",
+    ]),
     Some(&["bos"]),
     Some(&["bpy"]),
     Some(&["bre"]),
@@ -79,7 +95,10 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["cak"]),
     Some(&["cat"]),
     Some(&["cbk"]),
-    Some(&["cco", "chj", "chq", "chz", "cle", "cnl", "cnt", "cpa", "csa", "cso", "cte", "ctl", "cuc", "cvn"]),
+    Some(&[
+        "cco", "chj", "chq", "chz", "cle", "cnl", "cnt", "cpa", "csa", "cso", "cte", "ctl", "cuc",
+        "cvn",
+    ]),
     Some(&["ceb"]),
     Some(&["cgg"]),
     Some(&["cha"]),
@@ -100,7 +119,17 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["cop"]),
     Some(&["cor"]),
     Some(&["cos"]),
-    Some(&["abs", "acf", "afs", "aig", "aoa", "bah", "bew", "bis", "bjs", "bpl", "bpq", "brc", "bxo", "bzj", "bzk", "cbk", "ccl", "ccm", "chn", "cks", "cpe", "cpf", "cpi", "cpp", "cri", "crp", "crs", "dcr", "dep", "djk", "fab", "fng", "fpe", "gac", "gcf", "gcl", "gcr", "gib", "goq", "gpe", "gul", "gyn", "hat", "hca", "hmo", "hwc", "icr", "idb", "ihb", "jam", "jvd", "kcn", "kea", "kmv", "kri", "kww", "lir", "lou", "lrt", "max", "mbf", "mcm", "mfe", "mfp", "mkn", "mod", "msi", "mud", "mzs", "nag", "nef", "ngm", "njt", "onx", "oor", "pap", "pcm", "pea", "pey", "pga", "pih", "pis", "pln", "pml", "pmy", "pov", "pre", "rcf", "rop", "scf", "sci", "skw", "srm", "srn", "sta", "svc", "tas", "tch", "tcs", "tgh", "tmg", "tpi", "trf", "tvy", "uln", "vic", "vkp", "wes", "xmm"]),
+    Some(&[
+        "abs", "acf", "afs", "aig", "aoa", "bah", "bew", "bis", "bjs", "bpl", "bpq", "brc", "bxo",
+        "bzj", "bzk", "cbk", "ccl", "ccm", "chn", "cks", "cpe", "cpf", "cpi", "cpp", "cri", "crp",
+        "crs", "dcr", "dep", "djk", "fab", "fng", "fpe", "gac", "gcf", "gcl", "gcr", "gib", "goq",
+        "gpe", "gul", "gyn", "hat", "hca", "hmo", "hwc", "icr", "idb", "ihb", "jam", "jvd", "kcn",
+        "kea", "kmv", "kri", "kww", "lir", "lou", "lrt", "max", "mbf", "mcm", "mfe", "mfp", "mkn",
+        "mod", "msi", "mud", "mzs", "nag", "nef", "ngm", "njt", "onx", "oor", "pap", "pcm", "pea",
+        "pey", "pga", "pih", "pis", "pln", "pml", "pmy", "pov", "pre", "rcf", "rop", "scf", "sci",
+        "skw", "srm", "srn", "sta", "svc", "tas", "tch", "tcs", "tgh", "tmg", "tpi", "trf", "tvy",
+        "uln", "vic", "vkp", "wes", "xmm",
+    ]),
     Some(&["cre"]),
     Some(&["crx", "caf"]),
     Some(&["crh"]),
@@ -213,7 +242,9 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["ibb"]),
     Some(&["ibo"]),
     Some(&["ido"]),
-    Some(&["iby", "ijc", "ije", "ijn", "ijo", "ijs", "nkx", "okd", "okr", "orr"]),
+    Some(&[
+        "iby", "ijc", "ije", "ijn", "ijo", "ijs", "nkx", "okd", "okr", "orr",
+    ]),
     Some(&["ile"]),
     Some(&["ilo"]),
     Some(&["ina"]),
@@ -286,7 +317,10 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["kaa"]),
     Some(&["krl"]),
     Some(&["kdr"]),
-    Some(&["blk", "bwe", "eky", "ghk", "jkm", "jkp", "kar", "kjp", "kjt", "ksw", "kvl", "kvq", "kvt", "kvu", "kvy", "kxf", "kxk", "kyu", "pdu", "pwo", "pww", "wea"]),
+    Some(&[
+        "blk", "bwe", "eky", "ghk", "jkm", "jkp", "kar", "kjp", "kjt", "ksw", "kvl", "kvq", "kvt",
+        "kvu", "kvy", "kxf", "kxk", "kyu", "pdu", "pwo", "pww", "wea",
+    ]),
     Some(&["kqy"]),
     Some(&["kas"]),
     Some(&["ksh"]),
@@ -383,10 +417,18 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["mus"]),
     Some(&["mwl"]),
     Some(&["mww"]),
-    Some(&["acr", "agu", "caa", "cac", "cak", "chf", "ckz", "cob", "ctu", "emy", "hus", "itz", "ixl", "jac", "kek", "kjb", "knj", "lac", "mam", "mhc", "mop", "myn", "poc", "poh", "quc", "qum", "quv", "toj", "ttc", "tzh", "tzj", "tzo", "usp", "yua"]),
+    Some(&[
+        "acr", "agu", "caa", "cac", "cak", "chf", "ckz", "cob", "ctu", "emy", "hus", "itz", "ixl",
+        "jac", "kek", "kjb", "knj", "lac", "mam", "mhc", "mop", "myn", "poc", "poh", "quc", "qum",
+        "quv", "toj", "ttc", "tzh", "tzj", "tzo", "usp", "yua",
+    ]),
     Some(&["mzn"]),
     Some(&["nag"]),
-    Some(&["azd", "azn", "azz", "nah", "naz", "nch", "nci", "ncj", "ncl", "ncx", "ngu", "nhc", "nhe", "nhg", "nhi", "nhk", "nhm", "nhn", "nhp", "nhq", "nht", "nhv", "nhw", "nhx", "nhy", "nhz", "nlv", "npl", "nsu", "nuz"]),
+    Some(&[
+        "azd", "azn", "azz", "nah", "naz", "nch", "nci", "ncj", "ncl", "ncx", "ngu", "nhc", "nhe",
+        "nhg", "nhi", "nhk", "nhm", "nhn", "nhp", "nhq", "nht", "nhv", "nhw", "nhx", "nhy", "nhz",
+        "nlv", "npl", "nsu", "nuz",
+    ]),
     Some(&["gld"]),
     Some(&["nap"]),
     Some(&["nsk"]),
@@ -449,7 +491,12 @@ static LANGUAGE_ISO: &[Option<&[&str]>] = &[
     Some(&["pro"]),
     Some(&["por"]),
     Some(&["pwo"]),
-    Some(&["bgr", "biu", "cek", "cey", "cfm", "cbl", "cka", "ckn", "clj", "clt", "cmr", "cnb", "cnh", "cnk", "cnw", "csh", "csj", "csv", "csy", "ctd", "cth", "czt", "dao", "gnb", "hlt", "hmr", "hra", "lus", "mrh", "mwq", "pck", "pkh", "pub", "ral", "rtc", "sch", "sez", "shl", "smt", "tcp", "tcz", "vap", "weu", "zom", "zyp"]),
+    Some(&[
+        "bgr", "biu", "cek", "cey", "cfm", "cbl", "cka", "ckn", "clj", "clt", "cmr", "cnb", "cnh",
+        "cnk", "cnw", "csh", "csj", "csv", "csy", "ctd", "cth", "czt", "dao", "gnb", "hlt", "hmr",
+        "hra", "lus", "mrh", "mwq", "pck", "pkh", "pub", "ral", "rtc", "sch", "sez", "shl", "smt",
+        "tcp", "tcz", "vap", "weu", "zom", "zyp",
+    ]),
     Some(&["quc"]),
     Some(&["quh"]),
     Some(&["quz"]),
@@ -1225,7 +1272,7 @@ static LANGUAGE_NAMES: &[&str] = &[
     "Chinese, Traditional, Macao SAR",
     "Zande",
     "Zulu",
-    "Zazaki"
+    "Zazaki",
 ];
 
 /// An OpenType language identifier.
@@ -1844,7 +1891,7 @@ pub enum Language {
     ZHTM,
     ZND,
     ZUL,
-    ZZA
+    ZZA,
 }
 
 impl Eq for Language {}
@@ -1859,7 +1906,7 @@ impl Language {
     pub fn upgrade(self) -> Self {
         match self {
             Language::DHV => Language::DIV,
-            _ => self
+            _ => self,
         }
     }
 
@@ -1874,7 +1921,7 @@ impl Language {
     }
 
     /// This language tag in ISO639 (if available)
-    pub fn as_iso639_ids(&self) -> Option<&'static [&'static str]> {
+    pub fn iso639_ids(&self) -> Option<&'static [&'static str]> {
         LANGUAGE_ISO[*self as usize]
     }
 }
@@ -1890,7 +1937,7 @@ mod tests {
         assert!(Language::dflt.is_default());
         assert!(!Language::JAN.is_default());
         assert_eq!(Language::JAN.name(), "Japanese");
-        assert!(Language::JAN.as_iso639_ids().is_some());
-        assert_eq!(Language::JAN.as_iso639_ids().unwrap()[0], "jpn");
+        assert!(Language::JAN.iso639_ids().is_some());
+        assert_eq!(Language::JAN.iso639_ids().unwrap()[0], "jpn");
     }
 }
