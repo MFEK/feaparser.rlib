@@ -5,15 +5,21 @@ pub mod language;
 pub mod script;
 
 use pest::{self, Parser};
-#[macro_use] extern crate pest_derive;
+#[macro_use]
+extern crate pest_derive;
 
 #[derive(Parser)]
 #[grammar = "../fea.pest"]
 pub struct FEAParser;
 
-#[test]
-fn test_feaparser() {
-    let test = r#"@lol = [Qol Mol @lol];
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_feaparser() {
+        let test = r#"@lol = [Qol Mol @lol];
     languagesystem DFLT dflt;
     language DEU required;
     include(te\)st);
@@ -116,8 +122,32 @@ feature liga {
 # comment ça va
 #
     "#;
-    let ast = FEAParser::parse(Rule::file, test);
-    //eprintln!("{:?}", ast);
-    use pest_ascii_tree::{self, into_ascii_tree};
-    eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
+        let ast = FEAParser::parse(Rule::file, test);
+        //eprintln!("{:?}", ast);
+        use pest_ascii_tree::{self, into_ascii_tree};
+        eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
+    }
+
+    #[test]
+    fn test_fonttools_test_suite() {
+        let mut ok = 0;
+        let mut fails = 0;
+        let paths = fs::read_dir("./tests/").unwrap();
+
+        for path in paths {
+            let path = path.as_ref().unwrap().path();
+            let data = fs::read_to_string(path.clone()).unwrap();
+            let ast = FEAParser::parse(Rule::file, &data);
+            if let Err(err) = ast {
+                println!("{}{}\n", path.to_str().unwrap().to_string(), err);
+                fails += 1;
+            } else {
+                ok += 1;
+            }
+        }
+        if fails > 0 {
+            println!("\n{} OK, {} failing\n", ok, fails);
+            panic!();
+        }
+    }
 }
