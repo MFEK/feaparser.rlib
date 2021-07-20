@@ -73,6 +73,7 @@ SIZEMENUNAME = @{ "sizemenuname" }
 CONTOURPOINT = @{ "contourpoint" }
 ANCHORTOKEN = @{ "anchor" }
 ANCHOR_DEF = @{ "anchorDef" }
+DEVICE = @{ "device" }
 VALUE_RECORD_DEF = @{ "valueRecordDef" }
 MARK = @{ "mark"}
 MARK_CLASS = @{ "markClass" }
@@ -331,8 +332,9 @@ valuePattern = { patternElement ~ valueRecord? }
 
 valueRecord = { BEGINVALUE ~ label ~ ENDVALUE | valueLiteral }
 
-valueLiteral = { ( BEGINVALUE ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ ENDVALUE ) | num_or_varnum }
+valueLiteral = { ( BEGINVALUE ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ (deviceLiteral ~ deviceLiteral ~ deviceLiteral ~ deviceLiteral)? ~ ENDVALUE ) | num_or_varnum }
 
+deviceLiteral = { BEGINVALUE ~ DEVICE ~ ( NUM ~ NUM ~ ("," ~ NUM ~ NUM )* | KNULL ) ~ ENDVALUE }
 cursiveElement = { patternElement ~ anchor ~ anchor }
 baseToMarkElement = { anchor ~ MARK ~ GCLASS ~ MARKER? }
 ligatureMarkElement = { anchor ~ ( MARK ~ GCLASS )? ~ LIG_COMPONENT? ~ MARKER? }
@@ -436,7 +438,7 @@ vmtxStatement = { ( vmtx | include ) ~ SEMI }
 
 vmtx = { ( VERT_ORIGIN_Y | VERT_ADVANCE_Y ) ~ glyph ~ NUM }
 
-anchor = { "<" ~ ANCHORTOKEN ~ (num_or_varnum ~ num_or_varnum ~ (CONTOURPOINT ~ cp)? | KNULL | label) ~ ">" }
+anchor = { "<" ~ ANCHORTOKEN ~ (num_or_varnum ~ num_or_varnum ~ (CONTOURPOINT ~ cp | deviceLiteral ~ deviceLiteral)? | KNULL | label) ~ ">" }
 
 anchor_test = { SOI ~ anchor ~ EOI }
 

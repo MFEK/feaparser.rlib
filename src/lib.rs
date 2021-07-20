@@ -33,7 +33,6 @@ mod tests {
     fn test_feaparser() {
         let test = r#"@lol = [Qol Mol @lol];
     languagesystem DFLT dflt;
-    language DEU required;
     include(te\)st);
     # include(te)st); would fail
     include (lol);
