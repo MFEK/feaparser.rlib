@@ -17,6 +17,18 @@ mod tests {
     use super::*;
     use std::fs;
 
+    macro_rules! test_parses {
+        ($name:ident, $string:expr, $expect:expr) => {
+            #[test]
+            fn $name() {
+                let ast = FEAParser::parse($expect, $string);
+                if let Err(err) = ast {
+                    panic!("{}", err);
+                }
+            }
+        };
+    }
+
     #[test]
     fn test_feaparser() {
         let test = r#"@lol = [Qol Mol @lol];
@@ -128,21 +140,20 @@ feature liga {
         eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
     }
 
-    #[test]
-    fn test_anchor() {
-        let ast = FEAParser::parse(Rule::anchor_test, "<anchor 200 300>");
-        if let Err(err) = ast {
-            panic!("{}", err);
-        }
-    }
+    test_parses!(test_anchor, "<anchor 200 300>", Rule::anchor);
+    test_parses!(
+        test_pos_mark,
+        "mark hamza <anchor 200 300> mark @MC1",
+        Rule::pos_mark
+    );
 
-    #[test]
-    fn test_pos_mark() {
-        let ast = FEAParser::parse(Rule::pos_mark, "mark hamza <anchor 200 300> mark @MC1");
-        if let Err(err) = ast {
-            panic!("{}", err);
-        }
-    }
+    test_parses!(
+        test_pos_mark_2,
+        "mark [acute grave macron ogonek]
+        <anchor 500 200> mark @TOP_MARKS
+        <anchor 500 -80> mark @BOTTOM_MARKS",
+        Rule::pos_mark
+    );
 
     #[test]
     fn test_fonttools_test_suite() {

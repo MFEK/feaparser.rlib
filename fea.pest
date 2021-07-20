@@ -242,7 +242,7 @@ featureStatement = { statement
 }
 
 lookupBlockOrUse = { LOOKUP ~ label ~ ( USE_EXTENSION? ~ LCBRACE ~
-    statement+
+    statement*
     ~ RCBRACE ~ label )? ~ SEMI
 }
 
@@ -307,10 +307,11 @@ pos_mark = { MARK ~ pattern ~ baseToMarkElement+ ~ pattern? }
 position = { enumtok? ~ postok ~ 
     (
         ( pattern? ~ ( valueRecord ~ valuePattern* ) )
-      | ( ( LOOKUP ~ label )+ ~ lookupPatternElement* )
+      | pos_mark
       | ( CURSIVE ~ cursiveElement ~ pattern? )
       | ( MARKBASE ~ pattern ~ baseToMarkElement+ ~ pattern? )
       | ( markligtok ~  pattern ~ ligatureMarkElement+ ~ pattern? )
+      | lookupPattern
     )
 }
 
@@ -377,7 +378,7 @@ table_name = { NAME ~ LCBRACE ~ nameStatement+ ~ RCBRACE ~ NAME ~ SEMI }
 
 nameStatement = { ( nameID | include ) ~ SEMI }
 
-nameID = { NAMEID ~ genNum ~ ( genNum ~ ( genNum ~ lang )? )? ~ QUOTE ~ STRVAL ~ EQUOTE }
+nameID = { NAMEID ~ genNum ~ ( genNum ~ ( genNum ~ genNum )? )? ~ QUOTE ~ STRVAL ~ EQUOTE }
 
 table_OS_2 = { OS_2 ~ LCBRACE ~ os_2Statement+ ~ RCBRACE ~ OS_2 ~ SEMI }
 
@@ -449,7 +450,7 @@ label = { NAMELABEL | MARK }
 tag = { NAMELABEL | EXTNAME | CATCHTAG | MARK }
 
 fixedNum = @{ POINTNUM | NUM }
-genNum = @{ NUM | NUMOCT | NUMEXT }
+genNum = @{ NUMEXT | NUMOCT | NUM }
 
 subtok = @{ SUBSTITUTE | SUBSTITUTE_v }
 revtok = @{ REVERSE | REVERSE_v }
