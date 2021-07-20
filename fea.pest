@@ -243,7 +243,8 @@ tableBlock = { TABLE ~
     )
 }
 
-anonBlock = { anontok ~ A_LABEL ~ A_LBRACE ~ ANY* ~ A_CLOSE }
+A_BLOCK = { "{" ~ (A_BLOCK | !"}" ~ ANY)+ ~ "}" }
+anonBlock = { anontok ~ A_LABEL ~ A_BLOCK+ ~ A_CLOSE }
 
 lookupBlockTopLevel = { LOOKUP ~ label ~ USE_EXTENSION? ~ LCBRACE
     ~ statement* ~ RCBRACE ~ label ~ SEMI }
