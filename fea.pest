@@ -81,6 +81,8 @@ MARKBASE = @{ "base" }
 MARKLIG = @{ "ligature" }
 MARKLIG_v = @{ "lig" }
 LIG_COMPONENT = @{ "ligComponent" }
+CONDITIONSET = @{ "conditionset" }
+VARIATION = @{ "variation" }
 
 KNULL = @{ "NULL" }
 
@@ -178,6 +180,7 @@ CATCHTAG = @{ TSTART ~ TCHR? }
 
 file = _{ SOI ~ ( topLevelStatement
     | featureBlock
+    | variationFeatureBlock
     | tableBlock
     | anonBlock
     | lookupBlockTopLevel
@@ -191,6 +194,7 @@ topLevelStatement = { ( include
     | mark_statement
     | anchorDef
     | valueRecordDef
+    | conditionsetDef
     ) ~
     SEMI
 }
@@ -211,9 +215,16 @@ anchorDef = { ANCHOR_DEF ~ xval ~ yval ~ ( CONTOURPOINT ~ cp )? ~ label }
 
 valueRecordDef = { VALUE_RECORD_DEF ~ valueLiteral ~ label }
 
+conditionsetDef = { CONDITIONSET ~ label ~ LCBRACE ~ condition+ ~ RCBRACE ~ label }
+condition = { tag ~ NUM ~ NUM ~ SEMI }
+
 starttag = @{tag}
 endtag = @{tag}
 featureBlock = { FEATURE ~ starttag ~ USE_EXTENSION? ~ LCBRACE
+    ~ featureStatement+
+    ~ RCBRACE ~ endtag ~ SEMI }
+
+variationFeatureBlock = { VARIATION ~ starttag ~ label ~ USE_EXTENSION? ~ LCBRACE
     ~ featureStatement+
     ~ RCBRACE ~ endtag ~ SEMI }
 
@@ -320,7 +331,7 @@ valuePattern = { patternElement ~ valueRecord? }
 
 valueRecord = { BEGINVALUE ~ label ~ ENDVALUE | valueLiteral }
 
-valueLiteral = { ( BEGINVALUE ~ NUM ~ NUM ~ NUM ~ NUM ~ ENDVALUE ) | NUM }
+valueLiteral = { ( BEGINVALUE ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ ENDVALUE ) | num_or_varnum }
 
 cursiveElement = { patternElement ~ anchor ~ anchor }
 baseToMarkElement = { anchor ~ MARK ~ GCLASS ~ MARKER? }
@@ -425,7 +436,7 @@ vmtxStatement = { ( vmtx | include ) ~ SEMI }
 
 vmtx = { ( VERT_ORIGIN_Y | VERT_ADVANCE_Y ) ~ glyph ~ NUM }
 
-anchor = { "<" ~ ANCHORTOKEN ~ (NUM ~ NUM ~ (CONTOURPOINT ~ cp)? | KNULL | label) ~ ">" }
+anchor = { "<" ~ ANCHORTOKEN ~ (num_or_varnum ~ num_or_varnum ~ (CONTOURPOINT ~ cp)? | KNULL | label) ~ ">" }
 
 anchor_test = { SOI ~ anchor ~ EOI }
 
@@ -460,6 +471,10 @@ enumtok = @{ ENUMERATE | ENUMERATE_v }
 postok = @{ POSITION | POSITION_v }
 markligtok = @{ MARKLIG | MARKLIG_v }
 
+location = { tag ~ "=" ~ NUM }
+master = { location ~ ("," ~ location)* ~ ":" ~ NUM }
+varnum = { "(" ~ (master | NUM)+ ~ ")" }
+num_or_varnum = { varnum | NUM }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
 comment_inner = { (!"\n" ~ ANY)+ }
