@@ -155,6 +155,14 @@ feature liga {
         Rule::pos_mark
     );
 
+    test_parses!(
+        test_feature_names,
+        "featureNames {
+        name \"Feature description for MS Platform, script Unicode, language English\";
+        };",
+        Rule::statement
+    );
+
     #[test]
     fn test_fonttools_test_suite() {
         let mut ok = 0;

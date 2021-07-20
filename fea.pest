@@ -234,7 +234,7 @@ tableBlock = { TABLE ~
 anonBlock = { anontok ~ A_LABEL ~ A_LBRACE ~ ANY* ~ A_CLOSE }
 
 lookupBlockTopLevel = { LOOKUP ~ label ~ USE_EXTENSION? ~ LCBRACE
-    ~ statement+ ~ RCBRACE ~ label ~ SEMI }
+    ~ statement* ~ RCBRACE ~ label ~ SEMI }
 
 featureStatement = { statement
     | lookupBlockOrUse
@@ -242,7 +242,7 @@ featureStatement = { statement
 }
 
 lookupBlockOrUse = { LOOKUP ~ label ~ ( USE_EXTENSION? ~ LCBRACE ~
-    statement*
+    statement+
     ~ RCBRACE ~ label )? ~ SEMI
 }
 
@@ -260,7 +260,9 @@ cvParameter = { ( CV_UI_LABEL | CV_TOOLTIP | CV_SAMPLE_TEXT | CV_PARAM_LABEL ) ~
     | CV_CHARACTER ~ genNum
 }
 
-statement = { ( featureUse
+statement = { ( 
+    featureNames
+    | featureUse
     | scriptAssign
     | langAssign
     | lookupflagAssign
@@ -271,7 +273,6 @@ statement = { ( featureUse
     | position
     | parameters
     | sizemenuname
-    | featureNames
     | subtable
     | include
     ) ~ SEMI
