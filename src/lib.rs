@@ -129,6 +129,22 @@ feature liga {
     }
 
     #[test]
+    fn test_anchor() {
+        let ast = FEAParser::parse(Rule::anchor_test, "<anchor 200 300>");
+        if let Err(err) = ast {
+            panic!("{}", err);
+        }
+    }
+
+    #[test]
+    fn test_pos_mark() {
+        let ast = FEAParser::parse(Rule::pos_mark, "mark hamza <anchor 200 300> mark @MC1");
+        if let Err(err) = ast {
+            panic!("{}", err);
+        }
+    }
+
+    #[test]
     fn test_fonttools_test_suite() {
         let mut ok = 0;
         let mut fails = 0;
