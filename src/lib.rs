@@ -1,15 +1,27 @@
 //use allsorts;
 //use nom;
 
+pub mod ast;
+pub mod builder;
 pub mod language;
 pub mod script;
 
-use pest::{self, Parser};
-#[macro_use] extern crate pest_derive;
+use crate::ast::FeatureAST;
+use crate::builder::Builder;
+
+use pest::{self, error::Error, Parser};
+#[macro_use]
+extern crate pest_derive;
 
 #[derive(Parser)]
 #[grammar = "../fea.pest"]
 pub struct FEAParser;
+
+impl<'a> FEAParser {
+    pub fn parse_to_ast(input: &'a str) -> Result<FeatureAST<'a>, Error<Rule>> {
+        FEAParser::parse(Rule::file, input).map(|x| FeatureAST(Some(x)))
+    }
+}
 
 #[test]
 fn test_feaparser() {
@@ -116,8 +128,18 @@ feature liga {
 # comment ça va
 #
     "#;
-    let ast = FEAParser::parse(Rule::file, test);
-    //eprintln!("{:?}", ast);
-    use pest_ascii_tree::{self, into_ascii_tree};
-    eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
+}
+
+#[test]
+fn test_feabuilder() {
+    let test = r#"
+    feature liga {
+        sub f i by f_i;
+    } liga;
+    "#;
+    let mut ast = FEAParser::parse_to_ast(test);
+    assert!(ast.is_ok());
+
+    let mut builder = Builder::new();
+    ast.unwrap().build(&mut builder);
 }
