@@ -82,7 +82,9 @@ anchordef_statement = { anchordef_tag ~ anchor_coordinates ~ contourpoint? ~ anc
 
 // Blocks
 block = _{ "{" ~ (block | statement)* ~ "}" }
-tagged_block = { tag ~ block ~ tag }
+start_tag = { tag }
+end_tag = { tag }
+tagged_block = { start_tag ~ block ~ end_tag }
 
 // "anonymous" can contain anything
 anonymous_quoted_string = @{ "\"" ~ qs_inner ~ "\"" }
@@ -90,7 +92,7 @@ anonymous_inner = @{ (anonymous_block | anonymous_inner_statement) ~ ";"? }
 anonymous_block = _{ "{" ~ anonymous_inner* ~ "}" }
 anonymous_word = @{ (!";" ~ !"{" ~ !"}" ~ !"\"" ~ ANY)+ }
 anonymous_inner_statement = @{ anonymous_quoted_string | anonymous_word }
-anonymous_statement = { ("anon" ~ ("ymous")?) ~ tag ~ anonymous_block ~ tag }
+anonymous_statement = { ("anon" ~ ("ymous")?) ~ start_tag ~ anonymous_block ~ end_tag }
 
 fea_hex_integer = @{ ("0x" | "0X") ~ ASCII_HEX_DIGIT+ }
 fea_decimal_integer = @{ "-"? ~ ASCII_DIGIT+ }
@@ -99,7 +101,7 @@ fea_integer = @{ fea_hex_integer | fea_decimal_integer }
 name_statement = { "name" ~ fea_integer? ~ fea_integer? ~ fea_integer? ~ quoted_string? }
 feature_names_statement = { "featureNames" ~ block }
 
-feature_statement = { "feature" ~ tag ~ use_extension? ~ block ~ tag }
+feature_statement = { "feature" ~ start_tag ~ use_extension? ~ block ~ end_tag }
 
 // Lookups
 lookupflag_statement = { "lookupflag" ~ (fea_integer | lookupflag_simple | lookupflag_complex) }
