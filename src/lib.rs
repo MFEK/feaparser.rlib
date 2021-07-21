@@ -5,17 +5,34 @@ pub mod language;
 pub mod script;
 
 use pest::{self, Parser};
-#[macro_use] extern crate pest_derive;
+#[macro_use]
+extern crate pest_derive;
 
 #[derive(Parser)]
 #[grammar = "../fea.pest"]
 pub struct FEAParser;
 
-#[test]
-fn test_feaparser() {
-    let test = r#"@lol = [Qol Mol @lol];
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    macro_rules! test_parses {
+        ($name:ident, $string:expr, $expect:expr) => {
+            #[test]
+            fn $name() {
+                let ast = FEAParser::parse($expect, $string);
+                if let Err(err) = ast {
+                    panic!("{}", err);
+                }
+            }
+        };
+    }
+
+    #[test]
+    fn test_feaparser() {
+        let test = r#"@lol = [Qol Mol @lol];
     languagesystem DFLT dflt;
-    language DEU required;
     include(te\)st);
     # include(te)st); would fail
     include (lol);
@@ -116,8 +133,55 @@ feature liga {
 # comment ça va
 #
     "#;
-    let ast = FEAParser::parse(Rule::file, test);
-    //eprintln!("{:?}", ast);
-    use pest_ascii_tree::{self, into_ascii_tree};
-    eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
+        let ast = FEAParser::parse(Rule::file, test);
+        //eprintln!("{:?}", ast);
+        use pest_ascii_tree::{self, into_ascii_tree};
+        eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
+    }
+
+    test_parses!(test_anchor, "<anchor 200 300>", Rule::anchor);
+    test_parses!(
+        test_pos_mark,
+        "mark hamza <anchor 200 300> mark @MC1",
+        Rule::pos_mark
+    );
+
+    test_parses!(
+        test_pos_mark_2,
+        "mark [acute grave macron ogonek]
+        <anchor 500 200> mark @TOP_MARKS
+        <anchor 500 -80> mark @BOTTOM_MARKS",
+        Rule::pos_mark
+    );
+
+    test_parses!(
+        test_feature_names,
+        "featureNames {
+        name \"Feature description for MS Platform, script Unicode, language English\";
+        };",
+        Rule::statement
+    );
+
+    #[test]
+    fn test_fonttools_test_suite() {
+        let mut ok = 0;
+        let mut fails = 0;
+        let paths = fs::read_dir("./tests/").unwrap();
+
+        for path in paths {
+            let path = path.as_ref().unwrap().path();
+            let data = fs::read_to_string(path.clone()).unwrap();
+            let ast = FEAParser::parse(Rule::file, &data);
+            if let Err(err) = ast {
+                println!("{}{}\n", path.to_str().unwrap().to_string(), err);
+                fails += 1;
+            } else {
+                ok += 1;
+            }
+        }
+        if fails > 0 {
+            println!("\n{} OK, {} failing\n", ok, fails);
+            panic!();
+        }
+    }
 }
