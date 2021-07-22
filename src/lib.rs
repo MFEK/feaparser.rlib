@@ -3,6 +3,7 @@
 
 pub mod ast;
 pub mod builder;
+pub mod error;
 pub mod language;
 pub mod script;
 
@@ -173,6 +174,8 @@ feature liga {
         Rule::statement
     );
 
+    test_parses!(test_gsub4, "sub f i by f_i", Rule::gsub4);
+    test_parses!(test_gsub4_sub, "sub f i by f_i", Rule::substitute);
     #[test]
     fn test_fonttools_test_suite() {
         let mut ok = 0;
@@ -196,17 +199,31 @@ feature liga {
         }
     }
 
+    use std::iter::FromIterator;
+    macro_rules! glyphset {
+        ($($k:expr => $v:expr),* $(,)?) => {
+            std::collections::HashMap::<String, u16>::from_iter(std::array::IntoIter::new([$(($k.to_string(), $v),)*]))
+        };
+    }
+
     #[test]
     fn test_feabuilder() {
         let test = r#"
     feature liga {
-        sub f i by f_i;
+        sub f f i by f_f_i;
+        sub f i by fi;
     } liga;
     "#;
         let mut ast = FEAParser::parse_to_ast(test);
         assert!(ast.is_ok());
-
-        let mut builder = Builder::new();
+        let mut glyphset = glyphset!(
+            "f" => 6,
+            "i" => 9,
+            "fi" => 120,
+            "f_f_i" => 121,
+        );
+        let mut builder = Builder::new(glyphset);
         ast.unwrap().build(&mut builder);
+        println!("{:?}", builder);
     }
 }

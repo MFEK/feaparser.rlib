@@ -309,13 +309,25 @@ lookupflagElement = { RIGHT_TO_LEFT
 
 ignoreSubOrPos = { IGNORE ~ ( subtok | revtok | postok ) ~ lookupPattern ~ ( COMMA ~ lookupPattern )* }
 
+reverse_substitute = { revtok ~ lookupPattern ~ ( BY ~ ( KNULL | lookupPattern ) )? }
+gsub6 = { subtok ~ lookupPattern }
 
+gsub1a = { subtok ~ glyph ~ BY ~ glyph }
+gsub1b = { subtok ~ glyphClass ~ BY ~ glyph }
+gsub1c = { subtok ~ glyphClass ~ BY ~ glyphClass }
+
+gsub2 = { subtok ~ glyph ~ BY ~ glyph+ }
+gsub3 = { subtok ~ glyph ~  FROM  ~ glyphClass }
+gsub4 = { subtok ~ (!BY ~ glyphOrClass)+ ~ BY ~ glyph }
 substitute = {
-	// No, this is evil and undocumented
-	// ( EXCEPT ~ lookupPattern ~ ( COMMA ~ lookupPattern )* )?
-      ( revtok ~ lookupPattern ~ ( BY ~ ( KNULL | lookupPattern ) )? )
-    | 
-    	( subtok ~ lookupPattern ~ ( ( BY | FROM ) ~ ( KNULL | lookupPattern ) )? )
+    gsub2 |
+    gsub1a |
+    gsub1b |
+    gsub1c |
+    gsub4 |
+    reverse_substitute |
+    gsub3 |
+    gsub6
 }
 
 pos_mark = { MARK ~ pattern ~ baseToMarkElement+ ~ pattern? }
@@ -442,15 +454,15 @@ vmtx = { ( VERT_ORIGIN_Y | VERT_ADVANCE_Y ) ~ glyph ~ NUM }
 
 anchor = { "<" ~ ANCHORTOKEN ~ (num_or_varnum ~ num_or_varnum ~ (CONTOURPOINT ~ cp | deviceLiteral ~ deviceLiteral)? | KNULL | label) ~ ">" }
 
-anchor_test = { SOI ~ anchor ~ EOI }
-
 lookupPattern = { lookupPatternElement+ }
 
 lookupPatternElement = { patternElement ~ ( LOOKUP ~ label )* }
 
 pattern = { patternElement+ }
 
-patternElement = { ( glyphClass | glyph ) ~ MARKER? }
+glyphOrClass = { ( glyphClass | glyph ) }
+patternElement = {  glyphOrClass ~ MARKER? }
+markedPatternElement = { glyphOrClass ~ MARKER }
 
 glyphClassOptional = { glyphClass? }
 

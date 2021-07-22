@@ -11,3 +11,4 @@ pest = "2.1"
 pest_derive = "2.1"
 pest_ascii_tree = "0.1"
 fonttools = { git = "https://github.com/simoncozens/fonttools-rs", features = ["rayon"] }
+snafu = "0.6.10"
