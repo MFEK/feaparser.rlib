@@ -219,7 +219,7 @@ feature liga {
                     sub f f i by f_f_i;
                     sub f i by fi;
 
-                    language TRK required;
+                    language TRK;
                     sub f l by fl;
                 } liga;
         "#;

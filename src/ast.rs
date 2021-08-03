@@ -228,7 +228,7 @@ impl FeatureAST<'_> {
                 include_default = false;
             }
             if token == "required" {
-                required = false;
+                required = true;
             }
         }
         builder.set_language(language, include_default, required)?;
