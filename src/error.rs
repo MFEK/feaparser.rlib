@@ -25,6 +25,9 @@ pub enum Error {
 
     #[snafu(display("Unknown glyph: {} not found in font", name))]
     UnknownGlyph { name: String },
+
+    #[snafu(display("Within a named lookup, all rules must of the same lookup type and flag"))]
+    DisparateRulesInLookup,
 }
 
 pub type Result<'a, T, E = Error> = std::result::Result<T, E>;

@@ -223,7 +223,7 @@ feature liga {
             "f_f_i" => 121,
         );
         let mut builder = Builder::new(glyphset);
-        ast.unwrap().build(&mut builder);
-        println!("{:?}", builder);
+        builder.build(ast.unwrap());
+        println!("{:#?}", builder);
     }
 }

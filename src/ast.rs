@@ -12,10 +12,11 @@ macro_rules! rule_todo {
 pub struct FeatureAST<'a>(pub Option<Pairs<'a, Rule>>);
 
 impl FeatureAST<'_> {
-    pub fn build(&mut self, builder: &mut Builder) {
+    pub fn build(&mut self, builder: &mut Builder) -> Result<()> {
         if let Some(pairs) = self.0.take() {
-            self.build_items(builder, pairs);
+            self.build_items(builder, pairs)?;
         }
+        Ok(())
     }
 
     fn build_items(&mut self, builder: &mut Builder, pairs: Pairs<Rule>) -> Result<()> {
