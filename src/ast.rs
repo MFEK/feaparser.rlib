@@ -70,7 +70,7 @@ impl FeatureAST<'_> {
 
             Rule::featureUse => rule_todo!(pair),
             Rule::scriptAssign => rule_todo!(pair),
-            Rule::langAssign => rule_todo!(pair),
+            Rule::langAssign => self._build_language(builder, pair.into_inner())?,
             Rule::lookupflagAssign => rule_todo!(pair),
             Rule::lookupflagElement => rule_todo!(pair),
             Rule::ignoreSubOrPos => rule_todo!(pair),
@@ -214,6 +214,24 @@ impl FeatureAST<'_> {
         feat.next();
         let to_glyph = feat.next().unwrap().as_str();
         builder.add_ligature_subst(None, from_glyphs, None, to_glyph)?;
+        Ok(())
+    }
+
+    pub fn _build_language(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let language = feat.next().unwrap().as_str();
+        let mut include_default = true;
+        let mut required = false;
+        while feat.peek().is_some() {
+            let token = feat.next().unwrap().as_str();
+            if token == "excludeDFLT" || token == "exclude_dflt" {
+                include_default = false;
+            }
+            if token == "required" {
+                required = false;
+            }
+        }
+        builder.set_language(language, include_default, required)?;
         Ok(())
     }
 }

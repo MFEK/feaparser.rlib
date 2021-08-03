@@ -17,7 +17,9 @@ use std::collections::HashSet;
 use std::convert::TryInto;
 
 fn tag(s: &str) -> Tag {
-    (*s).as_bytes().try_into().unwrap()
+    let mut four = format!("{:<4}", s);
+    four.truncate(4);
+    four.as_bytes().try_into().unwrap()
 }
 
 #[derive(Debug)]
@@ -297,6 +299,47 @@ impl Builder {
                 .or_insert_with(Vec::new)
                 .push(ix);
         }
+    }
+
+    #[allow(clippy::unnecessary_unwrap)]
+    pub fn set_language(
+        &mut self,
+        lang: &str,
+        include_default: bool,
+        required: bool,
+    ) -> Result<()> {
+        if let Some(cfn) = &self.cur_feature_name {
+            if cfn == "aalt" || cfn == "size" {
+                return Err(Error::BadLanguageInFeature {
+                    feature: cfn.to_string(),
+                });
+            }
+            self.cur_lookup = None;
+            let lookups = self.features.get(&FeatureKey {
+                script: self.script.as_ref().unwrap().to_string(),
+                lang: "dflt".to_string(),
+                feature_name: cfn.to_string(),
+            });
+            let key = FeatureKey {
+                script: self.script.as_ref().unwrap().to_string(),
+                lang: lang.to_string(),
+                feature_name: cfn.to_string(),
+            };
+            if (lang == "dflt" || include_default) && lookups.is_some() {
+                self.features.insert(key, lookups.unwrap().clone());
+            } else {
+                self.features.insert(key, vec![]);
+            }
+            self.cur_language_systems = HashSet::new();
+            self.cur_language_systems
+                .insert((self.script.as_ref().unwrap().to_string(), lang.to_string()));
+            if required {
+                panic!("Feed me");
+            }
+        } else {
+            return Err(Error::BadLanguageInLookup);
+        }
+        Ok(())
     }
 
     pub fn add_ligature_subst(

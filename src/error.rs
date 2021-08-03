@@ -28,6 +28,12 @@ pub enum Error {
 
     #[snafu(display("Within a named lookup, all rules must of the same lookup type and flag"))]
     DisparateRulesInLookup,
+
+    #[snafu(display("Language statements are not allowed within a {} feature", feature))]
+    BadLanguageInFeature { feature: String },
+
+    #[snafu(display("Language statements are not allowed within a lookup"))]
+    BadLanguageInLookup,
 }
 
 pub type Result<'a, T, E = Error> = std::result::Result<T, E>;

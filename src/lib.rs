@@ -218,6 +218,9 @@ feature liga {
                 feature liga {
                     sub f f i by f_f_i;
                     sub f i by fi;
+
+                    language TRK required;
+                    sub f l by fl;
                 } liga;
         "#;
 
@@ -227,8 +230,10 @@ feature liga {
         let glyphset = glyphset!(
             "f" => 6,
             "i" => 9,
+            "l" => 12,
             "fi" => 120,
             "f_f_i" => 121,
+            "fl" => 122,
         );
         let mut builder = Builder::new(glyphset);
         builder
