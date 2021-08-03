@@ -1,6 +1,8 @@
 use crate::error::{Error, Result};
 use crate::FeatureAST;
-use fonttools::layout::common::{LanguageSystem, Lookup, LookupFlags, Script, ScriptList};
+use fonttools::font::Font;
+use fonttools::font::Table;
+use fonttools::layout::common::{LanguageSystem, Lookup, LookupFlags, Script};
 use fonttools::layout::gsub1::SingleSubst;
 use fonttools::layout::gsub2::MultipleSubst;
 use fonttools::layout::gsub3::AlternateSubst;
@@ -10,8 +12,8 @@ use fonttools::GPOS::{Positioning, GPOS};
 use fonttools::GSUB::{Substitution, GSUB};
 use itertools::Itertools;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::collections::HashSet;
-use std::collections::{BTreeMap, HashMap};
 use std::convert::TryInto;
 
 fn tag(s: &str) -> Tag {
@@ -74,13 +76,22 @@ impl Builder {
             ..Default::default()
         }
     }
-    pub fn build(&mut self, mut parsetree: FeatureAST) {
-        let res = parsetree.build(self);
+    pub fn build(&mut self, mut parsetree: FeatureAST, font: &mut Font) -> Result<()> {
+        parsetree.build(self)?;
         // Build aalt
         let gsubgpos = self.make_gsubgpos();
-        println!("{:#?}", gsubgpos);
-        println!("HELLO WORLD");
-        // if we have any scripts/features/lookups, put them in the font
+        if let Some(gsub) = gsubgpos.0 {
+            font.tables.insert(*b"GSUB", Table::GSUB(gsub));
+        } else {
+            font.tables.remove(b"GSUB");
+        }
+
+        if let Some(gpos) = gsubgpos.1 {
+            font.tables.insert(*b"GPOS", Table::GPOS(gpos));
+        } else {
+            font.tables.remove(b"GPOS");
+        }
+        Ok(())
         // recalc os2 max context
     }
 

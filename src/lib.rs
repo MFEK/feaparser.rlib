@@ -8,7 +8,6 @@ pub mod language;
 pub mod script;
 
 use crate::ast::FeatureAST;
-use crate::builder::Builder;
 
 use pest::{self, error::Error, Parser};
 #[macro_use]
@@ -27,7 +26,11 @@ impl<'a> FEAParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::builder::Builder;
+    use fonttools::font::{Font, Table};
+    use fonttools::maxp::maxp;
     use std::fs;
+    use std::fs::File;
 
     macro_rules! test_parses {
         ($name:ident, $string:expr, $expect:expr) => {
@@ -208,22 +211,30 @@ feature liga {
 
     #[test]
     fn test_feabuilder() {
+        let mut font = Font::new(fonttools::font::SfntVersion::TrueType);
+        font.tables.insert(*b"maxp", Table::Maxp(maxp::new05(5)));
+
         let test = r#"
-    feature liga {
-        sub f f i by f_f_i;
-        sub f i by fi;
-    } liga;
-    "#;
-        let mut ast = FEAParser::parse_to_ast(test);
+                feature liga {
+                    sub f f i by f_f_i;
+                    sub f i by fi;
+                } liga;
+        "#;
+
+        let ast = FEAParser::parse_to_ast(test);
         assert!(ast.is_ok());
-        let mut glyphset = glyphset!(
+
+        let glyphset = glyphset!(
             "f" => 6,
             "i" => 9,
             "fi" => 120,
             "f_f_i" => 121,
         );
         let mut builder = Builder::new(glyphset);
-        builder.build(ast.unwrap());
-        println!("{:#?}", builder);
+        builder
+            .build(ast.unwrap(), &mut font)
+            .expect("Couldn't build");
+        let mut outfile = File::create("test.ttf").expect("Could not create file");
+        font.save(&mut outfile);
     }
 }

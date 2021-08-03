@@ -194,7 +194,7 @@ impl FeatureAST<'_> {
         builder.end_feature();
         Ok(())
     }
-    pub fn dump(&mut self, mut pairs: Pairs<Rule>) {
+    pub fn dump(&mut self, pairs: Pairs<Rule>) {
         for p in pairs {
             println!("{:#?}", p);
         }
