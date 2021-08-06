@@ -48,7 +48,11 @@ fn main() {
     }
 
     let mut builder = Builder::new(glyphset);
-    builder.build(ast, &mut font).expect("Couldn't build");
+    let res = builder.build(ast, &mut font);
+    if res.is_err() {
+        println!("Building failed: {}", res.err().unwrap());
+        std::process::exit(1);
+    }
 
     let mut outfile = if matches.is_present("OUTPUT") {
         File::create(matches.value_of("OUTPUT").unwrap())
