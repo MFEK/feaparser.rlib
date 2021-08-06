@@ -77,7 +77,6 @@ impl FeatureAST<'_> {
             Rule::lookupflagAssign => self._build_lookup_flag(builder, pair.into_inner())?,
             Rule::lookupflagElement => rule_todo!(pair),
             Rule::ignoreSubOrPos => rule_todo!(pair),
-            Rule::pos_mark => rule_todo!(pair),
             Rule::position => rule_todo!(pair),
             Rule::valuePattern => rule_todo!(pair),
             Rule::valueRecord => rule_todo!(pair),

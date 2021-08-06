@@ -157,17 +157,17 @@ feature liga {
 
     test_parses!(test_anchor, "<anchor 200 300>", Rule::anchor);
     test_parses!(
-        test_pos_mark,
-        "mark hamza <anchor 200 300> mark @MC1",
-        Rule::pos_mark
+        test_gpos4,
+        "pos mark hamza <anchor 200 300> mark @MC1",
+        Rule::gpos4
     );
 
     test_parses!(
-        test_pos_mark_2,
-        "mark [acute grave macron ogonek]
+        test_gpos4_2,
+        "pos mark [acute grave macron ogonek]
         <anchor 500 200> mark @TOP_MARKS
         <anchor 500 -80> mark @BOTTOM_MARKS",
-        Rule::pos_mark
+        Rule::gpos4
     );
 
     test_parses!(
@@ -217,6 +217,8 @@ feature liga {
 
         let test = r#"
                 @stuff = [f i fi];
+
+                languagesystem DFLT dflt;
 
                 lookup foobar {
                     lookupflag RightToLeft UseMarkFilteringSet [f i];

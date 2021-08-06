@@ -333,15 +333,20 @@ substitute = {
     gsub6
 }
 
-pos_mark = { MARK ~ pattern ~ baseToMarkElement+ ~ pattern? }
-position = { enumtok? ~ postok ~ 
+gpos4 = { postok ~ MARK ~ pattern ~ baseToMarkElement+ ~ pattern? }
+gpos3 = { postok ~ CURSIVE ~ cursiveElement ~ pattern? }
+gpos5 = { postok ~ MARKBASE ~ pattern ~ baseToMarkElement+ ~ pattern? }
+gpos6 = { postok ~ markligtok ~  pattern ~ ligatureMarkElement+ ~ pattern? }
+gpos8 = { postok ~ lookupPattern }
+position = {
     (
-        ( pattern? ~ ( valueRecord ~ valuePattern* ) )
-      | pos_mark
-      | ( CURSIVE ~ cursiveElement ~ pattern? )
-      | ( MARKBASE ~ pattern ~ baseToMarkElement+ ~ pattern? )
-      | ( markligtok ~  pattern ~ ligatureMarkElement+ ~ pattern? )
-      | lookupPattern
+        gpos4
+      | gpos3
+      | gpos5
+      | gpos6
+      |  ( enumtok? ~ postok ~  pattern? ~ ( valueRecord ~ valuePattern* ) )
+      | gpos8
+
     )
 }
 
