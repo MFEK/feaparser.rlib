@@ -277,6 +277,26 @@ impl Builder {
         self.cur_mark_filter_set = None;
     }
 
+    pub fn add_lookup_call(&mut self, lookup_name: &str) -> Result<()> {
+        self.cur_lookup = None;
+        if let Some(&lookup_id) = self.named_lookups.get(lookup_name) {
+            self.add_lookup_to_feature(
+                lookup_id,
+                self.cur_feature_name
+                    .as_ref()
+                    .ok_or(Error::InternalError {
+                        what: "We weren't in a feature".to_string(),
+                    })?
+                    .to_string(),
+            );
+            Ok(())
+        } else {
+            Err(Error::UnknownLookup {
+                lookup_name: lookup_name.to_string(),
+            })
+        }
+    }
+
     pub fn start_lookup_block(&mut self, lookup_name: &str) -> Result<()> {
         if self.named_lookups.contains_key(lookup_name) {
             return Err(Error::DuplicateLookup {

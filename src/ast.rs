@@ -48,17 +48,19 @@ impl FeatureAST<'_> {
             Rule::variationFeatureBlock => rule_todo!(pair),
             Rule::tableBlock => rule_todo!(pair),
             Rule::anonBlock => rule_todo!(pair),
-            Rule::lookupBlockTopLevel => self._build_lookup_block(builder, pair.into_inner())?,
-            Rule::lookupBlockOrUse => rule_todo!(pair),
             Rule::cvParameterBlock => rule_todo!(pair),
             Rule::cvParameterStatement => rule_todo!(pair),
             Rule::cvParameter => rule_todo!(pair),
+            Rule::lookupBlock => self._build_lookup_block(builder, pair.into_inner())?,
+            Rule::lookupBlockTopLevel => self._build_lookup_block(builder, pair.into_inner())?,
+            Rule::lookupUse => self._build_lookup_use(builder, pair.into_inner())?,
 
             // Things where we just recurse into the different options
             Rule::topLevelStatement => self.build_items(builder, pair.into_inner())?,
             Rule::featureStatement => self.build_items(builder, pair.into_inner())?,
             Rule::statement => self.build_items(builder, pair.into_inner())?,
             Rule::substitute => self.build_items(builder, pair.into_inner())?,
+            Rule::lookupBlockOrUse => self.build_items(builder, pair.into_inner())?,
 
             Rule::reverse_substitute => rule_todo!(pair),
             Rule::gsub6 => self.dump(pair),
@@ -194,6 +196,17 @@ impl FeatureAST<'_> {
         builder.features.extend(features);
         builder.end_feature();
         Ok(())
+    }
+
+    pub fn _build_lookup_use(
+        &mut self,
+        builder: &mut Builder,
+        mut lookup: Pairs<Rule>,
+    ) -> Result<()> {
+        lookup.next();
+        let name_token = lookup.next().unwrap();
+        let name = name_token.as_str();
+        builder.add_lookup_call(name)
     }
 
     pub fn _build_lookup_block(

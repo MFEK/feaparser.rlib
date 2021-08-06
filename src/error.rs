@@ -68,6 +68,12 @@ pub enum Error {
 
     #[snafu(display("\"languagesystem {} {}\" has already been specified", script, lang))]
     LanguageSystemAlreadySpecified { script: String, lang: String },
+
+    #[snafu(display("Unknown lookup \"{}\"", lookup_name))]
+    UnknownLookup { lookup_name: String },
+
+    #[snafu(display("Something went wrong and shouldn't have done: {}", what))]
+    InternalError { what: String },
 }
 
 pub type Result<'a, T, E = Error> = std::result::Result<T, E>;

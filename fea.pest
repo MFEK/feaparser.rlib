@@ -255,9 +255,12 @@ featureStatement = { statement
     | cvParameterBlock
 }
 
-lookupBlockOrUse = { LOOKUP ~ label ~ ( USE_EXTENSION? ~ LCBRACE ~
+lookupBlockOrUse = { lookupBlock | lookupUse }
+lookupUse = { LOOKUP ~ label ~ USE_EXTENSION? ~ SEMI }
+lookupBlock = { LOOKUP ~ label ~ USE_EXTENSION? ~
+    LCBRACE ~
     statement+
-    ~ RCBRACE ~ label )? ~ SEMI
+    ~ RCBRACE ~ label  ~ SEMI
 }
 
 cvParameterBlock = { CV_PARAMETERS ~ LCBRACE ~
