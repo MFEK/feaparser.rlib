@@ -10,6 +10,14 @@ edition = "2018"
 pest = "2.1"
 pest_derive = "2.1"
 pest_ascii_tree = "0.1"
-fonttools = { git = "https://github.com/simoncozens/fonttools-rs", features = ["rayon"] }
+fonttools = { path="/Users/simon/hacks/typography/fonttools-rs", features = ["rayon"] }
 snafu = "0.6.10"
 itertools = "0.10.1"
+clap = { version = "2.3.33", optional = true }
+
+[features]
+build-binary = ["clap"]
+
+[[bin]]
+name = "featiculus"
+required-features = ["build-binary"]

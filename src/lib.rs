@@ -8,6 +8,7 @@ pub mod language;
 pub mod script;
 
 use crate::ast::FeatureAST;
+pub use builder::Builder;
 
 use pest::{self, error::Error, Parser};
 #[macro_use]
