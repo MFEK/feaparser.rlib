@@ -316,7 +316,7 @@ gsub1a = { subtok ~ glyph ~ BY ~ glyph }
 gsub1b = { subtok ~ glyphClass ~ BY ~ glyph }
 gsub1c = { subtok ~ glyphClass ~ BY ~ glyphClass }
 
-gsub2 = { subtok ~ glyph ~ BY ~ glyph+ }
+gsub2 = { subtok ~ glyph ~ BY ~ glyph ~ glyph+ }
 gsub3 = { subtok ~ glyph ~  FROM  ~ glyphClass }
 gsub4 = { subtok ~ (!BY ~ glyphOrClass)+ ~ BY ~ glyph }
 substitute = {

@@ -1,6 +1,7 @@
 use crate::builder::Builder;
 use crate::error::{Error, Result};
 use crate::Rule;
+use fonttools::layout::common::LookupFlags;
 use pest::iterators::{Pair, Pairs};
 
 macro_rules! rule_todo {
@@ -29,8 +30,7 @@ impl FeatureAST<'_> {
         match pair.as_rule() {
             Rule::include => rule_todo!(pair),
             Rule::file => rule_todo!(pair),
-            Rule::topLevelStatement => rule_todo!(pair),
-            Rule::glyphClassAssign => rule_todo!(pair),
+            Rule::glyphClassAssign => self._assign_glyph_class(builder, pair.into_inner())?,
             Rule::script => rule_todo!(pair),
             Rule::lang => rule_todo!(pair),
             Rule::langsysAssign => rule_todo!(pair),
@@ -48,30 +48,31 @@ impl FeatureAST<'_> {
             Rule::variationFeatureBlock => rule_todo!(pair),
             Rule::tableBlock => rule_todo!(pair),
             Rule::anonBlock => rule_todo!(pair),
-            Rule::lookupBlockTopLevel => rule_todo!(pair),
+            Rule::lookupBlockTopLevel => self._build_lookup_block(builder, pair.into_inner())?,
             Rule::lookupBlockOrUse => rule_todo!(pair),
             Rule::cvParameterBlock => rule_todo!(pair),
             Rule::cvParameterStatement => rule_todo!(pair),
             Rule::cvParameter => rule_todo!(pair),
 
             // Things where we just recurse into the different options
+            Rule::topLevelStatement => self.build_items(builder, pair.into_inner())?,
             Rule::featureStatement => self.build_items(builder, pair.into_inner())?,
             Rule::statement => self.build_items(builder, pair.into_inner())?,
             Rule::substitute => self.build_items(builder, pair.into_inner())?,
 
             Rule::reverse_substitute => rule_todo!(pair),
-            Rule::gsub6 => self.dump(pair.into_inner()),
-            Rule::gsub1a => self.dump(pair.into_inner()),
-            Rule::gsub1b => self.dump(pair.into_inner()),
-            Rule::gsub1c => self.dump(pair.into_inner()),
-            Rule::gsub2 => self.dump(pair.into_inner()),
-            Rule::gsub3 => self.dump(pair.into_inner()),
+            Rule::gsub6 => self.dump(pair),
+            Rule::gsub1a => self._build_gsub1a(builder, pair.into_inner())?,
+            Rule::gsub1b => self._build_gsub1b(builder, pair.into_inner())?,
+            Rule::gsub1c => self.dump(pair),
+            Rule::gsub2 => self.dump(pair),
+            Rule::gsub3 => self.dump(pair),
             Rule::gsub4 => self._build_ligature_subst(builder, pair.into_inner())?,
 
             Rule::featureUse => rule_todo!(pair),
-            Rule::scriptAssign => rule_todo!(pair),
+            Rule::scriptAssign => self._build_script(builder, pair.into_inner())?,
             Rule::langAssign => self._build_language(builder, pair.into_inner())?,
-            Rule::lookupflagAssign => rule_todo!(pair),
+            Rule::lookupflagAssign => self._build_lookup_flag(builder, pair.into_inner())?,
             Rule::lookupflagElement => rule_todo!(pair),
             Rule::ignoreSubOrPos => rule_todo!(pair),
             Rule::pos_mark => rule_todo!(pair),
@@ -194,11 +195,163 @@ impl FeatureAST<'_> {
         builder.end_feature();
         Ok(())
     }
-    pub fn dump(&mut self, pairs: Pairs<Rule>) {
-        for p in pairs {
-            println!("{:#?}", p);
+
+    pub fn _build_lookup_block(
+        &mut self,
+        builder: &mut Builder,
+        mut lookup: Pairs<Rule>,
+    ) -> Result<()> {
+        // LOOKUP ~ label ~ USE_EXTENSION? ~ LCBRACE ~ statement* ~ RCBRACE ~ label ~ SEMI
+        lookup.next();
+        let name_token = lookup.next().unwrap();
+        let name = name_token.as_str();
+        let mut lookup = lookup.peekable();
+        builder.start_lookup_block(name)?;
+        if let Some(Rule::USE_EXTENSION) = lookup.peek().map(|x| x.as_rule()) {
+            lookup.next();
+        }
+        lookup.next();
+
+        while let Some(Rule::statement) = lookup.peek().map(|x| x.as_rule()) {
+            self.build_item(builder, lookup.next().unwrap())?;
+        }
+        lookup.next();
+        let endtag = lookup.next().unwrap().as_str();
+        if name != endtag {
+            let (line, col) = name_token.as_span().start_pos().line_col();
+            return Err(Error::MismatchedTag {
+                line,
+                col,
+                start_tag: name.to_string(),
+                end_tag: endtag.to_string(),
+            });
+        }
+
+        builder.end_lookup_block();
+        Ok(())
+    }
+
+    pub fn _build_lookup_flag(
+        &mut self,
+        builder: &mut Builder,
+        mut statement: Pairs<Rule>,
+    ) -> Result<()> {
+        statement.next();
+        let mut flag = LookupFlags::empty();
+        let mut mark_attachment = None;
+        let mut mark_filtering_set = None;
+        for el in statement {
+            if el.as_rule() == Rule::NUM {
+                flag = LookupFlags::from_bits_truncate(el.as_str().parse::<u16>().unwrap());
+                break;
+            } else {
+                // It's a lookupflagElement
+                let mut lookup_flag_element = el.into_inner();
+                match lookup_flag_element.next().unwrap().as_rule() {
+                    Rule::RIGHT_TO_LEFT => flag |= LookupFlags::RIGHT_TO_LEFT,
+                    Rule::IGNORE_BASE_GLYPHS => flag |= LookupFlags::IGNORE_BASE_GLYPHS,
+                    Rule::IGNORE_MARKS => flag |= LookupFlags::IGNORE_MARKS,
+                    Rule::IGNORE_LIGATURES => flag |= LookupFlags::IGNORE_LIGATURES,
+                    Rule::MARK_ATTACHMENT_TYPE => {
+                        mark_attachment =
+                            Some(self._expand_class(builder, lookup_flag_element.next().unwrap())?);
+                    }
+                    Rule::USE_MARK_FILTERING_SET => {
+                        mark_filtering_set =
+                            Some(self._expand_class(builder, lookup_flag_element.next().unwrap())?);
+                    }
+                    _ => panic!("Can't happen"),
+                }
+            }
+        }
+        builder.set_lookup_flag(flag, mark_attachment, mark_filtering_set)
+    }
+
+    pub fn dump(&mut self, pair: Pair<Rule>) {
+        println!("It's a {:?}", pair);
+
+        for p in pair.into_inner() {
+            println!("  {:#?}", p);
         }
         panic!("At the disco");
+    }
+
+    pub fn _assign_glyph_class(
+        &mut self,
+        builder: &mut Builder,
+        mut statement: Pairs<Rule>,
+    ) -> Result<()> {
+        let name = statement.next().unwrap();
+        statement.next();
+        let glyphs: Vec<String> = self._expand_class(builder, statement.next().unwrap())?;
+        builder
+            .glyph_classes
+            .insert(name.as_str().to_string(), glyphs);
+        Ok(())
+    }
+
+    pub fn _expand_class(
+        &mut self,
+        builder: &mut Builder,
+        class: Pair<Rule>,
+    ) -> Result<Vec<String>> {
+        let mut glyphs: Vec<String> = vec![];
+        let class = class.into_inner().next().unwrap();
+        match class.as_rule() {
+            Rule::gcLiteral => {
+                let mut elements = class.into_inner().peekable();
+                elements.next(); // [
+                while let Some(Rule::gcLiteralElement) = elements.peek().map(|x| x.as_rule()) {
+                    let element = elements.next().unwrap();
+                    let this_element: Vec<Pair<Rule>> = element.into_inner().collect();
+                    let first = this_element.first().unwrap();
+                    // if it's a GCLASS, recurse.
+                    if let Rule::GCLASS = first.as_rule() {
+                        let mut inner_class = self._expand_class(builder, first.clone())?;
+                        glyphs.append(&mut inner_class);
+                    } else if this_element.len() == 3 {
+                        // It's a range
+                        panic!("Feed me");
+                    } else {
+                        glyphs.push(first.as_str().to_string());
+                    }
+                }
+                Ok(glyphs)
+            }
+            Rule::GCLASS => {
+                let gcstring = class.as_str();
+                return builder
+                    .glyph_classes
+                    .get(gcstring)
+                    .map(|x| x.to_vec())
+                    .ok_or_else(|| Error::UnknownGlyphClass {
+                        name: gcstring.to_string(),
+                    });
+            }
+            _ => panic!("It's neither"),
+        }
+    }
+
+    pub fn _build_gsub1a(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let from_glyph = feat.next().unwrap().as_str();
+        // validate the glyph here
+        feat.next();
+        let to_glyph = feat.next().unwrap().as_str();
+        // validate the glyph here
+        builder.add_single_subst(None, from_glyph, None, to_glyph)
+    }
+
+    pub fn _build_gsub1b(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let from_glyphs: Vec<String> = self._expand_class(builder, feat.next().unwrap())?;
+        feat.next();
+        let to_glyph = feat.next().unwrap().as_str();
+        for from_glyph in from_glyphs {
+            // validate the glyph here
+            builder.add_single_subst(None, &from_glyph, None, to_glyph)?;
+        }
+        Ok(())
     }
 
     pub fn _build_ligature_subst(
@@ -209,12 +362,12 @@ impl FeatureAST<'_> {
         feat.next();
         let mut from_glyphs: Vec<&str> = vec![];
         while let Some(Rule::glyphOrClass) = feat.peek().map(|x| x.as_rule()) {
+            // validate the glyph here
             from_glyphs.push(feat.next().unwrap().as_str());
         }
         feat.next();
         let to_glyph = feat.next().unwrap().as_str();
-        builder.add_ligature_subst(None, from_glyphs, None, to_glyph)?;
-        Ok(())
+        builder.add_ligature_subst(None, from_glyphs, None, to_glyph)
     }
 
     pub fn _build_language(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
@@ -231,7 +384,12 @@ impl FeatureAST<'_> {
                 required = true;
             }
         }
-        builder.set_language(language, include_default, required)?;
-        Ok(())
+        builder.set_language(language, include_default, required)
+    }
+
+    pub fn _build_script(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let script = feat.next().unwrap().as_str();
+        builder.set_script(script)
     }
 }

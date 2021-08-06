@@ -12,8 +12,8 @@ use fonttools::GPOS::{Positioning, GPOS};
 use fonttools::GSUB::{Substitution, GSUB};
 use itertools::Itertools;
 use std::cmp::Ordering;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::convert::TryInto;
 
 fn tag(s: &str) -> Tag {
@@ -61,14 +61,17 @@ pub struct Builder {
     pub lookup_flag: LookupFlags,
     pub lookups: Vec<SomeLookup>,
     pub cur_mark_filter_set: Option<u16>,
-    pub default_language_systems: HashSet<(String, String)>,
+    pub default_language_systems: BTreeSet<(String, String)>,
     pub cur_lookup: Option<usize>,
     pub cur_feature_name: Option<String>,
     pub cur_lookup_name: Option<String>,
-    pub cur_language_systems: HashSet<(String, String)>,
+    pub cur_language_systems: BTreeSet<(String, String)>,
     pub named_lookups: HashMap<String, usize>,
     pub script: Option<String>,
     pub features: HashMap<FeatureKey, Vec<usize>>,
+    mark_attach_class_id: HashMap<BTreeSet<String>, u16>,
+    mark_filter_sets: HashMap<BTreeSet<String>, u16>,
+    mark_attach: HashMap<String, u16>,
 }
 
 impl Builder {
@@ -142,7 +145,7 @@ impl Builder {
                         gsub.features.len() - 1
                     });
                 gsub_scripts
-                    .entry(key.feature_name.as_str())
+                    .entry(key.script.as_str())
                     .or_insert_with(HashMap::new)
                     .entry(key.lang.as_str())
                     .or_insert_with(Vec::new)
@@ -224,11 +227,11 @@ impl Builder {
         )
     }
 
-    fn get_default_language_systems(&self) -> HashSet<(String, String)> {
+    fn get_default_language_systems(&self) -> BTreeSet<(String, String)> {
         if !self.default_language_systems.is_empty() {
             return self.default_language_systems.clone();
         }
-        let mut dflt = HashSet::new();
+        let mut dflt = BTreeSet::new();
         dflt.insert(("DFLT".to_string(), "dflt".to_string()));
         dflt
     }
@@ -244,10 +247,87 @@ impl Builder {
 
     pub fn end_feature(&mut self) {
         self.cur_feature_name = None;
-        self.cur_language_systems = HashSet::new();
+        self.cur_language_systems = BTreeSet::new();
         self.cur_lookup = None;
         self.lookup_flag = LookupFlags::empty();
         self.cur_mark_filter_set = None;
+    }
+
+    pub fn start_lookup_block(&mut self, lookup_name: &str) -> Result<()> {
+        if self.named_lookups.contains_key(lookup_name) {
+            return Err(Error::DuplicateLookup {
+                name: lookup_name.to_string(),
+            });
+        }
+        if self.cur_feature_name == Some("aalt".to_string()) {
+            return Err(Error::NoLookupsInAalt);
+        }
+
+        self.cur_lookup_name = Some(lookup_name.to_string());
+        self.cur_lookup = None;
+        if self.cur_feature_name.is_none() {
+            self.lookup_flag = LookupFlags::empty();
+            self.cur_mark_filter_set = None;
+        }
+        Ok(())
+    }
+
+    pub fn end_lookup_block(&mut self) {
+        assert!(self.cur_lookup_name.is_some());
+        self.cur_lookup_name = None;
+        if self.cur_feature_name.is_none() {
+            self.lookup_flag = LookupFlags::empty();
+            self.cur_mark_filter_set = None;
+        }
+    }
+
+    fn get_mark_attach_class(&mut self, glyphs: Vec<String>) -> Result<u16> {
+        let bag_o_glyphs: BTreeSet<String> = glyphs.iter().cloned().collect();
+        if let Some(&id) = self.mark_attach_class_id.get(&bag_o_glyphs) {
+            return Ok(id);
+        }
+
+        let id = self.mark_attach_class_id.len() as u16 + 1;
+        for glyph in glyphs {
+            if let Some(&old_id) = self.mark_attach.get(&glyph) {
+                return Err(Error::GlyphAlreadyAssignedToMarkAttachmentClass {
+                    glyph: glyph.to_string(),
+                    old_id,
+                });
+            }
+            self.mark_attach.insert(glyph, id);
+        }
+        self.mark_attach_class_id.insert(bag_o_glyphs, id);
+        Ok(id)
+    }
+
+    fn get_mark_filtering_set(&mut self, glyphs: Vec<String>) -> u16 {
+        let bag_o_glyphs: BTreeSet<String> = glyphs.iter().cloned().collect();
+        let cur_len = self.mark_filter_sets.len();
+        *self
+            .mark_filter_sets
+            .entry(bag_o_glyphs)
+            .or_insert(cur_len as u16 + 1)
+    }
+
+    pub fn set_lookup_flag(
+        &mut self,
+        flags: LookupFlags,
+        mark_attach: Option<Vec<String>>,
+        mark_filtering_set: Option<Vec<String>>,
+    ) -> Result<()> {
+        let mut flags: LookupFlags = flags & !LookupFlags::MARK_ATTACHMENT_TYPE_MASK;
+        if let Some(glyphs) = mark_attach {
+            flags |= LookupFlags::from_bits_truncate(self.get_mark_attach_class(glyphs)? << 8);
+        }
+        if let Some(glyphs) = mark_filtering_set {
+            flags |= LookupFlags::USE_MARK_FILTERING_SET;
+            self.cur_mark_filter_set = Some(self.get_mark_filtering_set(glyphs));
+        } else {
+            self.cur_mark_filter_set = None;
+        }
+        self.lookup_flag = flags;
+        Ok(())
     }
 
     fn ensure_sub_lookup(&mut self, lookup_type: u16) -> Result<usize> {
@@ -330,7 +410,7 @@ impl Builder {
             } else {
                 self.features.insert(key, vec![]);
             }
-            self.cur_language_systems = HashSet::new();
+            self.cur_language_systems = BTreeSet::new();
             self.cur_language_systems
                 .insert((self.script.as_ref().unwrap().to_string(), lang.to_string()));
             if required {
@@ -342,6 +422,72 @@ impl Builder {
         Ok(())
     }
 
+    pub fn set_script(&mut self, script: &str) -> Result<()> {
+        if let Some(cfn) = &self.cur_feature_name {
+            if cfn == "aalt" || cfn == "size" {
+                return Err(Error::BadScriptInFeature {
+                    feature: cfn.to_string(),
+                });
+            }
+            let mut wanted = BTreeSet::new();
+            wanted.insert((script.to_string(), "dflt".to_string()));
+            if self.cur_language_systems == wanted {
+                return Ok(());
+            }
+            self.cur_lookup = None;
+            self.script = Some(script.to_string());
+            self.lookup_flag = LookupFlags::empty();
+            self.cur_mark_filter_set = None;
+            self.set_language("dflt", true, false)
+        } else {
+            Err(Error::BadScriptInLookup)
+        }
+    }
+
+    pub fn add_single_subst(
+        &mut self,
+        prefix: Option<Vec<&str>>,
+        from_glyph: &str,
+        suffix: Option<Vec<&str>>,
+        to_glyph: &str,
+    ) -> Result<()> {
+        println!("Sub {:?} by {:?}", from_glyph, to_glyph);
+        if prefix.is_some() || suffix.is_some() {
+            return self.add_single_subst_chained(prefix, from_glyph, suffix, to_glyph);
+        }
+        let from_gid = self.glyph_id(from_glyph)?;
+        let to_gid = self.glyph_id(to_glyph)?;
+        let lookup_ix = self.ensure_sub_lookup(1)?;
+        let lookup = self.lookups.get_mut(lookup_ix).unwrap();
+        if let SomeLookup::GsubLookup(lu) = lookup {
+            if let Substitution::Single(subst) = &mut lu.rule {
+                let subtable = subst.last_mut().unwrap();
+                if let Some(&existing_to_gid) = subtable.mapping.get(&from_gid) {
+                    if existing_to_gid == to_gid {
+                        // Just a warning.
+                    } else {
+                        return Err(Error::DuplicateSubstitution {
+                            from_glyph: from_glyph.to_string(),
+                            to_gid,
+                        });
+                    }
+                }
+                subtable.mapping.insert(from_gid, to_gid);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn add_single_subst_chained(
+        &mut self,
+        _prefix: Option<Vec<&str>>,
+        _from_glyph: &str,
+        _suffix: Option<Vec<&str>>,
+        _to_glyph: &str,
+    ) -> Result<()> {
+        unimplemented!()
+    }
+
     pub fn add_ligature_subst(
         &mut self,
         _prefix: Option<Vec<&str>>,
@@ -349,7 +495,7 @@ impl Builder {
         _suffix: Option<Vec<&str>>,
         to_glyph: &str,
     ) -> Result<()> {
-        println!("Sub from {:?} to {:?}", from_glyphs, to_glyph);
+        println!("Sub {:?} by {:?}", from_glyphs, to_glyph);
         let from_gids = self.glyph_ids(from_glyphs)?;
         let to_gid = self.glyph_id(to_glyph)?;
         let lookup_ix = self.ensure_sub_lookup(4)?;

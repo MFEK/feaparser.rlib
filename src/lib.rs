@@ -215,19 +215,33 @@ feature liga {
         font.tables.insert(*b"maxp", Table::Maxp(maxp::new05(5)));
 
         let test = r#"
+                @stuff = [f i fi];
+
+                lookup foobar {
+                    lookupflag RightToLeft UseMarkFilteringSet [f i];
+                    sub a by b;
+                } foobar;
+
                 feature liga {
                     sub f f i by f_f_i;
                     sub f i by fi;
 
+                    script latn;
                     language TRK;
                     sub f l by fl;
                 } liga;
+
+                feature test {
+                    sub @stuff by f;
+                } test;
         "#;
 
         let ast = FEAParser::parse_to_ast(test);
         assert!(ast.is_ok());
 
         let glyphset = glyphset!(
+            "a" => 1,
+            "b" => 2,
             "f" => 6,
             "i" => 9,
             "l" => 12,
