@@ -33,7 +33,7 @@ impl FeatureAST<'_> {
             Rule::glyphClassAssign => self._assign_glyph_class(builder, pair.into_inner())?,
             Rule::script => rule_todo!(pair),
             Rule::lang => rule_todo!(pair),
-            Rule::langsysAssign => rule_todo!(pair),
+            Rule::langsysAssign => self._assign_language_system(builder, pair.into_inner())?,
             Rule::mark_statement => rule_todo!(pair),
             Rule::xval => rule_todo!(pair),
             Rule::yval => rule_todo!(pair),
@@ -274,6 +274,17 @@ impl FeatureAST<'_> {
             println!("  {:#?}", p);
         }
         panic!("At the disco");
+    }
+
+    pub fn _assign_language_system(
+        &mut self,
+        builder: &mut Builder,
+        mut statement: Pairs<Rule>,
+    ) -> Result<()> {
+        statement.next();
+        let script = statement.next().unwrap().as_str();
+        let lang = statement.next().unwrap().as_str();
+        builder.add_language_system(script, lang)
     }
 
     pub fn _assign_glyph_class(

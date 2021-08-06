@@ -72,6 +72,7 @@ pub struct Builder {
     mark_attach_class_id: HashMap<BTreeSet<String>, u16>,
     mark_filter_sets: HashMap<BTreeSet<String>, u16>,
     mark_attach: HashMap<String, u16>,
+    seen_non_DFLT_script: bool,
 }
 
 impl Builder {
@@ -234,6 +235,29 @@ impl Builder {
         let mut dflt = BTreeSet::new();
         dflt.insert(("DFLT".to_string(), "dflt".to_string()));
         dflt
+    }
+
+    pub fn add_language_system(&mut self, script: &str, lang: &str) -> Result<()> {
+        if script == "DFLT" && lang == "dflt" && !self.default_language_systems.is_empty() {
+            return Err(Error::LanguageSystemDFLTNotFirst);
+        }
+
+        if script == "DFLT" {
+            if self.seen_non_DFLT_script {
+                return Err(Error::LanguageSystemDFLTNotFirst); // kinda
+            }
+        } else {
+            self.seen_non_DFLT_script = true
+        }
+        let key = (script.to_string(), lang.to_string());
+        if self.default_language_systems.contains(&key) {
+            return Err(Error::LanguageSystemAlreadySpecified {
+                script: key.0,
+                lang: key.1,
+            });
+        }
+        self.default_language_systems.insert(key);
+        Ok(())
     }
 
     pub fn start_feature(&mut self, feature_name: &str) {

@@ -61,6 +61,13 @@ pub enum Error {
         old_id
     ))]
     GlyphAlreadyAssignedToMarkAttachmentClass { glyph: String, old_id: u16 },
+
+    #[snafu(display(
+        "If \"languagesystem DFLT dflt\" is present, it must be the first of the languagesystem statements"))]
+    LanguageSystemDFLTNotFirst,
+
+    #[snafu(display("\"languagesystem {} {}\" has already been specified", script, lang))]
+    LanguageSystemAlreadySpecified { script: String, lang: String },
 }
 
 pub type Result<'a, T, E = Error> = std::result::Result<T, E>;
