@@ -333,18 +333,23 @@ substitute = {
     gsub6
 }
 
+gpos1 = { postok ~ glyphOrClass ~ valueRecord ~ &SEMI }
+gpos2 = { postok ~ glyphOrClass ~ valueRecord? ~ glyphOrClass ~ valueRecord ~ &SEMI }
 gpos4 = { postok ~ MARK ~ pattern ~ baseToMarkElement+ ~ pattern? }
 gpos3 = { postok ~ CURSIVE ~ cursiveElement ~ pattern? }
 gpos5 = { postok ~ MARKBASE ~ pattern ~ baseToMarkElement+ ~ pattern? }
 gpos6 = { postok ~ markligtok ~  pattern ~ ligatureMarkElement+ ~ pattern? }
 gpos8 = { postok ~ lookupPattern }
+gpos_complex = {  enumtok? ~ postok ~  pattern? ~ ( valueRecord ~ valuePattern* ) }
 position = {
     (
-        gpos4
+        gpos1
+      | gpos2
+      | gpos4
       | gpos3
       | gpos5
       | gpos6
-      |  ( enumtok? ~ postok ~  pattern? ~ ( valueRecord ~ valuePattern* ) )
+      | gpos_complex
       | gpos8
 
     )
@@ -352,7 +357,8 @@ position = {
 
 valuePattern = { patternElement ~ valueRecord? }
 
-valueRecord = { BEGINVALUE ~ label ~ ENDVALUE | valueLiteral }
+valueRecord = { namedValueRecord | valueLiteral }
+namedValueRecord = { BEGINVALUE ~ label ~ ENDVALUE }
 
 valueLiteral = { ( BEGINVALUE ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ num_or_varnum ~ (deviceLiteral ~ deviceLiteral ~ deviceLiteral ~ deviceLiteral)? ~ ENDVALUE ) | num_or_varnum }
 

@@ -2,6 +2,7 @@ use crate::builder::Builder;
 use crate::error::{Error, Result};
 use crate::Rule;
 use fonttools::layout::common::LookupFlags;
+use fonttools::layout::valuerecord::ValueRecord;
 use pest::iterators::{Pair, Pairs};
 
 macro_rules! rule_todo {
@@ -60,6 +61,7 @@ impl FeatureAST<'_> {
             Rule::featureStatement => self.build_items(builder, pair.into_inner())?,
             Rule::statement => self.build_items(builder, pair.into_inner())?,
             Rule::substitute => self.build_items(builder, pair.into_inner())?,
+            Rule::position => self.build_items(builder, pair.into_inner())?,
             Rule::lookupBlockOrUse => self.build_items(builder, pair.into_inner())?,
 
             Rule::reverse_substitute => rule_todo!(pair),
@@ -71,13 +73,22 @@ impl FeatureAST<'_> {
             Rule::gsub3 => self.dump(pair),
             Rule::gsub4 => self._build_ligature_subst(builder, pair.into_inner())?,
 
+            Rule::gpos1 => self._build_gpos1(builder, pair.into_inner())?,
+            Rule::gpos2 => rule_todo!(pair),
+            Rule::gpos3 => rule_todo!(pair),
+            Rule::gpos4 => rule_todo!(pair),
+            Rule::gpos5 => rule_todo!(pair),
+            Rule::gpos6 => rule_todo!(pair),
+            Rule::gpos8 => rule_todo!(pair),
+            Rule::gpos_complex => rule_todo!(pair),
+
             Rule::featureUse => rule_todo!(pair),
             Rule::scriptAssign => self._build_script(builder, pair.into_inner())?,
             Rule::langAssign => self._build_language(builder, pair.into_inner())?,
             Rule::lookupflagAssign => self._build_lookup_flag(builder, pair.into_inner())?,
             Rule::lookupflagElement => rule_todo!(pair),
             Rule::ignoreSubOrPos => rule_todo!(pair),
-            Rule::position => rule_todo!(pair),
+
             Rule::valuePattern => rule_todo!(pair),
             Rule::valueRecord => rule_todo!(pair),
             Rule::valueLiteral => rule_todo!(pair),
@@ -159,7 +170,7 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
-    pub fn _build_feature_statement(
+    fn _build_feature_statement(
         &mut self,
         builder: &mut Builder,
         mut feat: Pairs<Rule>,
@@ -197,18 +208,14 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
-    pub fn _build_lookup_use(
-        &mut self,
-        builder: &mut Builder,
-        mut lookup: Pairs<Rule>,
-    ) -> Result<()> {
+    fn _build_lookup_use(&mut self, builder: &mut Builder, mut lookup: Pairs<Rule>) -> Result<()> {
         lookup.next();
         let name_token = lookup.next().unwrap();
         let name = name_token.as_str();
         builder.add_lookup_call(name)
     }
 
-    pub fn _build_lookup_block(
+    fn _build_lookup_block(
         &mut self,
         builder: &mut Builder,
         mut lookup: Pairs<Rule>,
@@ -243,7 +250,7 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
-    pub fn _build_lookup_flag(
+    fn _build_lookup_flag(
         &mut self,
         builder: &mut Builder,
         mut statement: Pairs<Rule>,
@@ -288,7 +295,7 @@ impl FeatureAST<'_> {
         panic!("At the disco");
     }
 
-    pub fn _assign_language_system(
+    fn _assign_language_system(
         &mut self,
         builder: &mut Builder,
         mut statement: Pairs<Rule>,
@@ -299,7 +306,7 @@ impl FeatureAST<'_> {
         builder.add_language_system(script, lang)
     }
 
-    pub fn _assign_glyph_class(
+    fn _assign_glyph_class(
         &mut self,
         builder: &mut Builder,
         mut statement: Pairs<Rule>,
@@ -313,11 +320,7 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
-    pub fn _expand_class(
-        &mut self,
-        builder: &mut Builder,
-        class: Pair<Rule>,
-    ) -> Result<Vec<String>> {
+    fn _expand_class(&mut self, builder: &mut Builder, class: Pair<Rule>) -> Result<Vec<String>> {
         let mut glyphs: Vec<String> = vec![];
         let class = class.into_inner().next().unwrap();
         match class.as_rule() {
@@ -355,7 +358,7 @@ impl FeatureAST<'_> {
         }
     }
 
-    pub fn _build_gsub1a(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+    fn _build_gsub1a(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
         feat.next();
         let from_glyph = feat.next().unwrap().as_str();
         // validate the glyph here
@@ -365,7 +368,7 @@ impl FeatureAST<'_> {
         builder.add_single_subst(None, from_glyph, None, to_glyph)
     }
 
-    pub fn _build_gsub1b(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+    fn _build_gsub1b(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
         feat.next();
         let from_glyphs: Vec<String> = self._expand_class(builder, feat.next().unwrap())?;
         feat.next();
@@ -377,7 +380,7 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
-    pub fn _build_ligature_subst(
+    fn _build_ligature_subst(
         &mut self,
         builder: &mut Builder,
         mut feat: Pairs<Rule>,
@@ -393,7 +396,18 @@ impl FeatureAST<'_> {
         builder.add_ligature_subst(None, from_glyphs, None, to_glyph)
     }
 
-    pub fn _build_language(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+    fn _build_gpos1(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let mut glyphs: Vec<&str> = vec![];
+        while let Some(Rule::glyphOrClass) = feat.peek().map(|x| x.as_rule()) {
+            // validate the glyph here
+            glyphs.push(feat.next().unwrap().as_str());
+        }
+        let value_record = self.ot_value_record(builder, feat.next().unwrap())?;
+        builder.add_single_pos(None, glyphs, None, value_record)
+    }
+
+    fn _build_language(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
         feat.next();
         let language = feat.next().unwrap().as_str();
         let mut include_default = true;
@@ -410,9 +424,43 @@ impl FeatureAST<'_> {
         builder.set_language(language, include_default, required)
     }
 
-    pub fn _build_script(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+    fn _build_script(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
         feat.next();
         let script = feat.next().unwrap().as_str();
         builder.set_script(script)
+    }
+
+    fn ot_value_record(&mut self, builder: &Builder, vr: Pair<Rule>) -> Result<ValueRecord> {
+        match vr.as_rule() {
+            Rule::valueRecord => self.ot_value_record(builder, vr.into_inner().next().unwrap()),
+            Rule::valueLiteral => {
+                let mut elements = vr.into_inner().peekable();
+                if elements.peek().unwrap().as_rule() == Rule::num_or_varnum {
+                    // pos a b 80
+                    let x_advance =
+                        elements
+                            .next()
+                            .unwrap()
+                            .as_str()
+                            .parse::<i16>()
+                            .map_err(|_| {
+                                Error::InternalError {
+                            what:
+                                "Thing we parsed as a number couldn't be turned into a Rust number"
+                                    .to_string(),
+                        }
+                            })?;
+                    let mut val = ValueRecord::new();
+                    val.xAdvance = Some(x_advance);
+                    Ok(val)
+                } else {
+                    unimplemented!()
+                }
+            }
+            Rule::namedValueRecord => {
+                unimplemented!()
+            }
+            _ => panic!(),
+        }
     }
 }

@@ -3,10 +3,13 @@ use crate::FeatureAST;
 use fonttools::font::Font;
 use fonttools::font::Table;
 use fonttools::layout::common::{LanguageSystem, Lookup, LookupFlags, Script};
+use fonttools::layout::gpos1::SinglePos;
+use fonttools::layout::gpos2::PairPos;
 use fonttools::layout::gsub1::SingleSubst;
 use fonttools::layout::gsub2::MultipleSubst;
 use fonttools::layout::gsub3::AlternateSubst;
 use fonttools::layout::gsub4::LigatureSubst;
+use fonttools::layout::valuerecord::ValueRecord;
 use fonttools::types::Tag;
 use fonttools::GPOS::{Positioning, GPOS};
 use fonttools::GSUB::{Substitution, GSUB};
@@ -382,6 +385,8 @@ impl Builder {
                 } else if self.cur_lookup_name.is_some() {
                     return Err(Error::DisparateRulesInLookup);
                 }
+            } else {
+                return Err(Error::DisparateRulesInLookup);
             }
         }
         self.lookups.push(SomeLookup::GsubLookup(Lookup {
@@ -395,6 +400,39 @@ impl Builder {
                 6 => Substitution::ChainedContextual,
                 7 => Substitution::Extension,
                 8 => Substitution::ReverseChaining,
+                _ => panic!("No such lookup type"),
+            },
+            mark_filtering_set: self.cur_mark_filter_set,
+        }));
+        let ix = self.lookups.len() - 1;
+        self.cur_lookup = Some(ix);
+        if let Some(name) = &self.cur_lookup_name {
+            self.named_lookups.insert(name.to_string(), ix);
+        }
+
+        if let Some(feature) = &self.cur_feature_name {
+            self.add_lookup_to_feature(ix, feature.to_string())
+        }
+        Ok(ix)
+    }
+
+    fn ensure_pos_lookup(&mut self, lookup_type: u16) -> Result<usize> {
+        if let Some(ix) = self.cur_lookup {
+            if let Some(SomeLookup::GposLookup(lu)) = self.lookups.get(ix) {
+                if lu.lookup_type() == lookup_type {
+                    return Ok(ix);
+                } else if self.cur_lookup_name.is_some() {
+                    return Err(Error::DisparateRulesInLookup);
+                }
+            } else {
+                return Err(Error::DisparateRulesInLookup);
+            }
+        }
+        self.lookups.push(SomeLookup::GposLookup(Lookup {
+            flags: self.lookup_flag,
+            rule: match lookup_type {
+                1 => Positioning::Single(vec![SinglePos::default()]),
+                2 => Positioning::Pair(vec![PairPos::default()]),
                 _ => panic!("No such lookup type"),
             },
             mark_filtering_set: self.cur_mark_filter_set,
@@ -552,6 +590,41 @@ impl Builder {
             }
         }
         Ok(())
+    }
+
+    pub fn add_single_pos(
+        &mut self,
+        prefix: Option<Vec<&str>>,
+        glyphs: Vec<&str>,
+        suffix: Option<Vec<&str>>,
+        value_record: ValueRecord,
+    ) -> Result<()> {
+        println!("pos {:?} {:?}", glyphs, value_record);
+        if prefix.is_some() || suffix.is_some() {
+            return self.add_single_pos_chained(prefix, glyphs, suffix, value_record);
+        }
+        let glyph_ids = self.glyph_ids(glyphs)?;
+        let lookup_ix = self.ensure_pos_lookup(1)?;
+        let lookup = self.lookups.get_mut(lookup_ix).unwrap();
+        if let SomeLookup::GposLookup(lu) = lookup {
+            if let Positioning::Single(subst) = &mut lu.rule {
+                let subtable = subst.last_mut().unwrap();
+                for gid in glyph_ids {
+                    subtable.mapping.insert(gid, value_record.clone());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn add_single_pos_chained(
+        &mut self,
+        _prefix: Option<Vec<&str>>,
+        _glyphs: Vec<&str>,
+        _suffix: Option<Vec<&str>>,
+        _value_record: ValueRecord,
+    ) -> Result<()> {
+        unimplemented!()
     }
 
     pub fn glyph_ids(&self, names: Vec<&str>) -> Result<Vec<u16>> {
