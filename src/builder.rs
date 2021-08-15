@@ -526,6 +526,16 @@ impl Builder {
         }
     }
 
+    pub fn add_subtable_break(&mut self) {
+        if let Some(lu) = self.cur_lookup {
+            let lookup = self.lookups.get_mut(lu).unwrap();
+            match lookup {
+                SomeLookup::GsubLookup(g) => g.add_subtable_break(),
+                SomeLookup::GposLookup(g) => g.add_subtable_break(),
+            }
+        }
+    }
+
     pub fn add_single_subst(
         &mut self,
         prefix: Option<Vec<&str>>,
@@ -610,7 +620,7 @@ impl Builder {
             if let Positioning::Single(subst) = &mut lu.rule {
                 let subtable = subst.last_mut().unwrap();
                 for gid in glyph_ids {
-                    subtable.mapping.insert(gid, value_record.clone());
+                    subtable.mapping.insert(gid, value_record);
                 }
             }
         }

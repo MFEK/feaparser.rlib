@@ -285,12 +285,12 @@ statement = { (
     | lookupflagAssign
     | glyphClassAssign
     | ignoreSubOrPos
+    | subtable
     | substitute
     | mark_statement
     | position
     | parameters
     | sizemenuname
-    | subtable
     | include
     ) ~ SEMI
 }

@@ -99,7 +99,7 @@ impl FeatureAST<'_> {
             Rule::parameters => rule_todo!(pair),
             Rule::sizemenuname => rule_todo!(pair),
             Rule::featureNames => rule_todo!(pair),
-            Rule::subtable => rule_todo!(pair),
+            Rule::subtable => self._build_subtable(builder),
             Rule::table_BASE => rule_todo!(pair),
             Rule::baseStatement => rule_todo!(pair),
             Rule::axisTags => rule_todo!(pair),
@@ -428,6 +428,10 @@ impl FeatureAST<'_> {
         feat.next();
         let script = feat.next().unwrap().as_str();
         builder.set_script(script)
+    }
+
+    fn _build_subtable(&mut self, builder: &mut Builder) {
+        builder.add_subtable_break();
     }
 
     fn ot_value_record(&mut self, builder: &Builder, vr: Pair<Rule>) -> Result<ValueRecord> {
