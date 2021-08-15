@@ -41,7 +41,7 @@ def addOpenTypeFeaturesFromString(font, featureString, tables=None):
     fea_fh.write(featureString)
     fea_fh.close()
     print(font_fname, fea_fname, tables)
-    subprocess.run(["./target/debug/featiculus", "-o", font_fname, font_fname, fea_fname])
+    subprocess.check_output(["./target/debug/featiculus", "-o", font_fname, font_fname, fea_fname])
     return TTFont("out-"+font_fname)
 
 
@@ -50,7 +50,7 @@ def addOpenTypeFeatures(font, fea_fname, tables=None):
     make_post(font)
     font.save(font_fname)
     print(font_fname, fea_fname, tables)
-    subprocess.run(["./target/debug/featiculus", "-o", font_fname+".out", font_fname, fea_fname])
+    subprocess.check_output(["./target/debug/featiculus", "-o", font_fname+".out", font_fname, fea_fname])
     return TTFont(font_fname+".out")
 
 def makeTTFont():
