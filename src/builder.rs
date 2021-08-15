@@ -580,6 +580,51 @@ impl Builder {
         unimplemented!()
     }
 
+    pub fn add_multiple_subst(
+        &mut self,
+        prefix: Option<Vec<&str>>,
+        from_glyph: &str,
+        suffix: Option<Vec<&str>>,
+        to_glyphs: Vec<String>,
+    ) -> Result<()> {
+        println!("Sub {:?} by {:?}", from_glyph, to_glyphs);
+        if prefix.is_some() || suffix.is_some() {
+            return self.add_multiple_subst_chained(prefix, from_glyph, suffix, to_glyphs);
+        }
+        let from_gid = self.glyph_id(from_glyph)?;
+        let to_gids: Result<Vec<u16>> = to_glyphs.iter().map(|g| self.glyph_id(g)).collect();
+        let to_gids = to_gids?;
+        let lookup_ix = self.ensure_sub_lookup(2)?;
+        let lookup = self.lookups.get_mut(lookup_ix).unwrap();
+        if let SomeLookup::GsubLookup(lu) = lookup {
+            if let Substitution::Multiple(subst) = &mut lu.rule {
+                let subtable = subst.last_mut().unwrap();
+                if let Some(existing_to_gids) = subtable.mapping.get(&from_gid) {
+                    if existing_to_gids == &to_gids {
+                        // Just a warning.
+                    } else {
+                        return Err(Error::DuplicateMultipleSubstitution {
+                            from_glyph: from_glyph.to_string(),
+                            to_gids,
+                        });
+                    }
+                }
+                subtable.mapping.insert(from_gid, to_gids);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn add_multiple_subst_chained(
+        &mut self,
+        _prefix: Option<Vec<&str>>,
+        _from_glyph: &str,
+        _suffix: Option<Vec<&str>>,
+        _to_glyphs: Vec<String>,
+    ) -> Result<()> {
+        unimplemented!()
+    }
+
     pub fn add_ligature_subst(
         &mut self,
         _prefix: Option<Vec<&str>>,

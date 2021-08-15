@@ -56,6 +56,16 @@ pub enum Error {
     DuplicateSubstitution { from_glyph: String, to_gid: u16 },
 
     #[snafu(display(
+        "A substitution was already declared from {} to GIDs {:?}",
+        from_glyph,
+        to_gids
+    ))]
+    DuplicateMultipleSubstitution {
+        from_glyph: String,
+        to_gids: Vec<u16>,
+    },
+
+    #[snafu(display(
         "A glyph {} was already assigned to a different mark class {}",
         glyph,
         old_id

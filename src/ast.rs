@@ -4,6 +4,7 @@ use crate::Rule;
 use fonttools::layout::common::LookupFlags;
 use fonttools::layout::valuerecord::ValueRecord;
 use pest::iterators::{Pair, Pairs};
+use std::iter::Peekable;
 
 macro_rules! rule_todo {
     ($pair:ident) => {
@@ -69,7 +70,7 @@ impl FeatureAST<'_> {
             Rule::gsub1a => self._build_gsub1a(builder, pair.into_inner())?,
             Rule::gsub1b => self._build_gsub1b(builder, pair.into_inner())?,
             Rule::gsub1c => self.dump(pair),
-            Rule::gsub2 => self.dump(pair),
+            Rule::gsub2 => self._build_gsub2(builder, pair.into_inner())?,
             Rule::gsub3 => self.dump(pair),
             Rule::gsub4 => self._build_ligature_subst(builder, pair.into_inner())?,
 
@@ -380,6 +381,18 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
+    fn _build_gsub2(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let from_glyph = feat.next().unwrap().as_str();
+        feat.next();
+        let mut to_glyphs: Vec<String> = vec![];
+        for n in feat {
+            to_glyphs.push(n.as_str().to_string());
+        }
+        builder.add_multiple_subst(None, &from_glyph, None, to_glyphs)?;
+        Ok(())
+    }
+
     fn _build_ligature_subst(
         &mut self,
         builder: &mut Builder,
@@ -400,6 +413,7 @@ impl FeatureAST<'_> {
         feat.next();
         let mut glyphs: Vec<&str> = vec![];
         while let Some(Rule::glyphOrClass) = feat.peek().map(|x| x.as_rule()) {
+            // XXX or class
             // validate the glyph here
             glyphs.push(feat.next().unwrap().as_str());
         }
@@ -434,32 +448,35 @@ impl FeatureAST<'_> {
         builder.add_subtable_break();
     }
 
+    fn get_number<'a>(&self, r: &mut Peekable<Pairs<Rule>>) -> Result<'a, i16> {
+        r.next()
+            .unwrap()
+            .as_str()
+            .parse::<i16>()
+            .map_err(|_| Error::InternalError {
+                what: "Thing we parsed as a number couldn't be turned into a Rust number"
+                    .to_string(),
+            })
+    }
+
     fn ot_value_record(&mut self, builder: &Builder, vr: Pair<Rule>) -> Result<ValueRecord> {
         match vr.as_rule() {
             Rule::valueRecord => self.ot_value_record(builder, vr.into_inner().next().unwrap()),
             Rule::valueLiteral => {
                 let mut elements = vr.into_inner().peekable();
+                let mut val = ValueRecord::new();
                 if elements.peek().unwrap().as_rule() == Rule::num_or_varnum {
                     // pos a b 80
-                    let x_advance =
-                        elements
-                            .next()
-                            .unwrap()
-                            .as_str()
-                            .parse::<i16>()
-                            .map_err(|_| {
-                                Error::InternalError {
-                            what:
-                                "Thing we parsed as a number couldn't be turned into a Rust number"
-                                    .to_string(),
-                        }
-                            })?;
-                    let mut val = ValueRecord::new();
-                    val.xAdvance = Some(x_advance);
-                    Ok(val)
+                    val.xAdvance = Some(self.get_number(&mut elements)?);
                 } else {
-                    unimplemented!()
+                    // beginvalue
+                    elements.next();
+                    val.xPlacement = Some(self.get_number(&mut elements)?);
+                    val.yPlacement = Some(self.get_number(&mut elements)?);
+                    val.xAdvance = Some(self.get_number(&mut elements)?);
+                    val.yAdvance = Some(self.get_number(&mut elements)?);
                 }
+                Ok(val)
             }
             Rule::namedValueRecord => {
                 unimplemented!()
