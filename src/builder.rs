@@ -174,7 +174,7 @@ impl Builder {
                         gpos.features.len() - 1
                     });
                 gpos_scripts
-                    .entry(key.feature_name.as_str())
+                    .entry(key.script.as_str())
                     .or_insert_with(HashMap::new)
                     .entry(key.lang.as_str())
                     .or_insert_with(Vec::new)
