@@ -321,6 +321,19 @@ impl FeatureAST<'_> {
         Ok(())
     }
 
+    fn _expand_glyph_or_class(
+        &mut self,
+        builder: &mut Builder,
+        class: Pair<Rule>,
+    ) -> Result<Vec<String>> {
+        let class = class.into_inner().next().unwrap();
+        match class.as_rule() {
+            Rule::glyphClass => self._expand_class(builder, class),
+            Rule::glyph => Ok(vec![class.as_str().to_string()]),
+            _ => panic!("It's neither"),
+        }
+    }
+
     fn _expand_class(&mut self, builder: &mut Builder, class: Pair<Rule>) -> Result<Vec<String>> {
         let mut glyphs: Vec<String> = vec![];
         let class = class.into_inner().next().unwrap();
@@ -411,12 +424,8 @@ impl FeatureAST<'_> {
 
     fn _build_gpos1(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
         feat.next();
-        let mut glyphs: Vec<&str> = vec![];
-        while let Some(Rule::glyphOrClass) = feat.peek().map(|x| x.as_rule()) {
-            // XXX or class
-            // validate the glyph here
-            glyphs.push(feat.next().unwrap().as_str());
-        }
+        let glyphs: Vec<String> = self._expand_glyph_or_class(builder, feat.next().unwrap())?;
+        let glyphs: Vec<&str> = glyphs.iter().map(|s| &**s).collect();
         let value_record = self.ot_value_record(builder, feat.next().unwrap())?;
         builder.add_single_pos(None, glyphs, None, value_record)
     }
