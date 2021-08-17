@@ -40,7 +40,6 @@ def addOpenTypeFeaturesFromString(font, featureString, tables=None):
     fea_fh = open(fea_fname, "w")
     fea_fh.write(featureString)
     fea_fh.close()
-    print(font_fname, fea_fname, tables)
     subprocess.check_output(["./target/debug/featiculus", "-o", font_fname, font_fname, fea_fname])
     return TTFont("out-"+font_fname)
 
@@ -49,7 +48,6 @@ def addOpenTypeFeatures(font, fea_fname, tables=None):
     _, font_fname = tempfile.mkstemp(suffix=".ttf")
     make_post(font)
     font.save(font_fname)
-    print(font_fname, fea_fname, tables)
     subprocess.check_output(["./target/debug/featiculus", "-o", font_fname+".out", font_fname, fea_fname])
     return TTFont(font_fname+".out")
 
@@ -808,11 +806,11 @@ for name in BuilderTest.TEST_FEATURE_FILES:
     setattr(BuilderTest, "test_FeatureFile_%s" % name,
             generate_feature_file_test(name))
 
+import subprocess
+subprocess.run(["cargo", "build", "--features", "build-binary"])
 
 
 if __name__ == "__main__":
     # Check we have built the latest
-    import subprocess
-    subprocess.run(["cargo", "build", "--features", "build-binary"])
 
     sys.exit(unittest.main())
