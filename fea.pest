@@ -508,4 +508,4 @@ num_or_varnum = { varnum | NUM }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
 comment_inner = { (!"\n" ~ ANY)+ }
-COMMENT = ${ "#" ~ WHITESPACE* ~ comment_inner? }
+COMMENT = _{ "#" ~ WHITESPACE* ~ comment_inner? }
