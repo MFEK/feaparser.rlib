@@ -40,7 +40,7 @@ pub enum Error {
     #[snafu(display("Script statements are not allowed within a {} feature", feature))]
     BadScriptInFeature { feature: String },
 
-    #[snafu(display("Language statements are not allowed within a lookup"))]
+    #[snafu(display("Language statements are not allowed within standalone lookup blocks"))]
     BadLanguageInLookup,
     #[snafu(display("Script statements are not allowed within a lookup"))]
     BadScriptInLookup,

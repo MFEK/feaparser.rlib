@@ -40,7 +40,10 @@ def addOpenTypeFeaturesFromString(font, featureString, tables=None):
     fea_fh = open(fea_fname, "w")
     fea_fh.write(featureString)
     fea_fh.close()
-    subprocess.check_output(["./target/debug/featiculus", "-o", font_fname, font_fname, fea_fname])
+    try:
+        subprocess.check_output(["./target/debug/featiculus", "-o", font_fname, font_fname, fea_fname])
+    except subprocess.CalledProcessError as e:
+        raise FeatureLibError(e.output, None)
     return TTFont("out-"+font_fname)
 
 
