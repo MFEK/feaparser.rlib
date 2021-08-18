@@ -69,7 +69,7 @@ impl FeatureAST<'_> {
             Rule::gsub6 => self.dump(pair),
             Rule::gsub1a => self._build_gsub1a(builder, pair.into_inner())?,
             Rule::gsub1b => self._build_gsub1b(builder, pair.into_inner())?,
-            Rule::gsub1c => self.dump(pair),
+            Rule::gsub1c => self._build_gsub1c(builder, pair.into_inner())?,
             Rule::gsub2 => self._build_gsub2(builder, pair.into_inner())?,
             Rule::gsub3 => self.dump(pair),
             Rule::gsub4 => self._build_ligature_subst(builder, pair.into_inner())?,
@@ -388,6 +388,18 @@ impl FeatureAST<'_> {
         feat.next();
         let to_glyph = feat.next().unwrap().as_str();
         for from_glyph in from_glyphs {
+            // validate the glyph here
+            builder.add_single_subst(None, &from_glyph, None, to_glyph)?;
+        }
+        Ok(())
+    }
+
+    fn _build_gsub1c(&mut self, builder: &mut Builder, mut feat: Pairs<Rule>) -> Result<()> {
+        feat.next();
+        let from_glyphs: Vec<String> = self._expand_class(builder, feat.next().unwrap())?;
+        feat.next();
+        let to_glyphs: Vec<String> = self._expand_class(builder, feat.next().unwrap())?;
+        for (from_glyph, to_glyph) in from_glyphs.iter().zip(to_glyphs.iter()) {
             // validate the glyph here
             builder.add_single_subst(None, &from_glyph, None, to_glyph)?;
         }
