@@ -665,7 +665,7 @@ impl Builder {
             if let Positioning::Single(subst) = &mut lu.rule {
                 let subtable = subst.last_mut().unwrap();
                 for gid in glyph_ids {
-                    subtable.mapping.insert(gid, value_record);
+                    subtable.mapping.insert(gid, value_record.clone());
                 }
             }
         }
