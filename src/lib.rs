@@ -47,8 +47,6 @@ mod tests {
         And I feel fine!
     } FRST;
 
-    name 0x3 0x1 0x411;
-
     feature mark {
 
     } mark;
@@ -58,7 +56,6 @@ mod tests {
             name 0x3 0x1 0x411 "Feature description for MS Platform, script Unicode, language Japanese";
             name "b";
         };
-        name "C";
     } liga;
 
     table GDEF {
@@ -138,6 +135,8 @@ feature liga {
         use pest_ascii_tree::{self, into_ascii_tree};
         eprintln!("{}", into_ascii_tree(ast.unwrap()).unwrap());
     }
+
+    test_parses!(test_anon, "anonymous vroo { l } vroo;", Rule::anonBlock);
 
     test_parses!(test_anchor, "<anchor 200 300>", Rule::anchor);
     test_parses!(

@@ -12,7 +12,7 @@ string_char = _{
     "\\" ~ "\""
     | !"\"" ~ ANY
 }
-STRVAL = @{ string_char+ }
+STRVAL = @{ string_char* }
 
 INCLUDE = @{ "include" }
 FEATURE = @{ "feature" }
@@ -222,7 +222,7 @@ condition = { tag ~ NUM ~ NUM ~ SEMI }
 starttag = @{tag}
 endtag = @{tag}
 featureBlock = { FEATURE ~ starttag ~ USE_EXTENSION? ~ LCBRACE
-    ~ featureStatement+
+    ~ featureStatement*
     ~ RCBRACE ~ endtag ~ SEMI }
 
 variationFeatureBlock = { VARIATION ~ starttag ~ label ~ USE_EXTENSION? ~ LCBRACE
@@ -243,7 +243,11 @@ tableBlock = { TABLE ~
     )
 }
 
-A_BLOCK = { "{" ~ (A_BLOCK | !"}" ~ ANY)+ ~ "}" }
+anon_string_char = _{
+    !("{" | "}" | "\"") ~ ANY
+}
+anon_inner = ${ (anon_string_char | (QUOTE ~ STRVAL ~ EQUOTE) | A_BLOCK)* }
+A_BLOCK = { "{" ~ anon_inner ~ "}" }
 anonBlock = { anontok ~ A_LABEL ~ A_BLOCK+ ~ A_CLOSE }
 
 lookupBlockTopLevel = { LOOKUP ~ label ~ USE_EXTENSION? ~ LCBRACE
@@ -469,7 +473,7 @@ genNum = @{ NUMEXT | NUMOCT | NUM }
 
 subtok = @{ SUBSTITUTE | SUBSTITUTE_v }
 revtok = @{ REVERSE | REVERSE_v }
-anontok = @{ ANON | ANON_v }
+anontok = @{ ANON_v | ANON }
 enumtok = @{ ENUMERATE | ENUMERATE_v }
 postok = @{ POSITION | POSITION_v }
 markligtok = @{ MARKLIG | MARKLIG_v }
